@@ -56,6 +56,7 @@ async function loadExistingProject() {
     document.getElementById('websiteUrl').value = latest.websiteUrl || '';
     document.getElementById('provenanceUrl').value = project.provenanceUrl || '';
     document.getElementById('title').value = project.title || '';
+    // Note: Pitch creator's answers are stored as a self-response in the responses table
     updatePreview();
   }
 }
@@ -72,6 +73,7 @@ async function loadExistingRevision() {
   
   document.getElementById('title').value = project.title || '';
   document.getElementById('description').value = revision.description || '';
+  document.getElementById('story').value = revision.story || '';
   document.getElementById('videoUrl').value = revision.videoUrl || '';
   document.getElementById('githubUrl').value = revision.githubUrl || '';
   document.getElementById('websiteUrl').value = revision.websiteUrl || '';
@@ -155,7 +157,12 @@ document.getElementById('pitch-form').addEventListener('submit', async (e) => {
     videoUrl: document.getElementById('videoUrl').value,
     githubUrl: document.getElementById('githubUrl').value,
     websiteUrl: document.getElementById('websiteUrl').value,
-    provenanceUrl: document.getElementById('provenanceUrl').value
+    provenanceUrl: document.getElementById('provenanceUrl').value,
+    // Pitch answers (hidden from public)
+    pitchWhatDoesItDo: document.getElementById('pitchWhatDoesItDo').value,
+    pitchProblemItSolves: document.getElementById('pitchProblemItSolves').value,
+    pitchWhoIsItFor: document.getElementById('pitchWhoIsItFor').value,
+    pitchHowToUse: document.getElementById('pitchHowToUse').value
   };
   
   let res;

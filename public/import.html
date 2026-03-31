@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Project - pitchmasters.club</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1><a href="/">pitchmasters.club</a></h1>
+      <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+      <div id="auth-section"></div>
+    </div>
+  </header>
+
+  <main id="project-main">
+    <a href="/" class="back-link">« Back to Projects</a>
+    
+    <section id="project-header">
+      <h2 id="page-title">Import a Project</h2>
+      <p class="page-subtitle">Import a project from Devpost or enter details manually to practice pitching it.</p>
+    </section>
+
+    <section id="import-section">
+      <div class="import-method" id="devpost-import">
+        <h3>Import from Devpost</h3>
+        <p class="method-description">Paste your Devpost project URL to automatically import the details.</p>
+        <form id="devpost-form">
+          <div class="form-group">
+            <label for="devpost-url">Devpost URL</label>
+            <input type="url" id="devpost-url" name="devpostUrl" required placeholder="https://devpost.com/software/your-project">
+          </div>
+          <button type="submit" class="btn btn-primary">Import from Devpost</button>
+        </form>
+        <div id="devpost-status" class="import-status"></div>
+      </div>
+      
+      <div class="import-divider">
+        <span>or</span>
+      </div>
+      
+      <div class="import-method" id="manual-import">
+        <h3>Enter Manually</h3>
+        <p class="method-description">Fill in the pitch details yourself.</p>
+        <form id="manual-form">
+          <div class="form-group">
+            <label for="title">Project Title</label>
+            <input type="text" id="title" name="title" required placeholder="e.g., Bugout">
+          </div>
+          
+          <div class="form-group">
+            <label for="description">Short Description</label>
+            <textarea id="description" name="description" rows="2" required placeholder="One sentence about what this project does..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="story">Full Story (optional)</label>
+            <textarea id="story" name="story" rows="4" placeholder="More detailed explanation..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="videoUrl">YouTube Video URL (optional)</label>
+            <input type="url" id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+          </div>
+          
+          <div class="form-group">
+            <label for="githubUrl">GitHub (optional)</label>
+            <input type="url" id="githubUrl" name="githubUrl" placeholder="https://github.com/...">
+          </div>
+          
+          <div class="form-group">
+            <label for="websiteUrl">Website (optional)</label>
+            <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://...">
+          </div>
+          
+          <div class="form-group">
+            <label for="provenanceUrl">Source URL (optional)</label>
+            <input type="url" id="provenanceUrl" name="provenanceUrl" placeholder="https://devpost.com/software/...">
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Create Project</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="/import.js"></script>
+</body>
+</html>

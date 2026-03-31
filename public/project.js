@@ -152,18 +152,62 @@ function renderResponses() {
     return;
   }
   
+  // Map field names to their corresponding rating field names in the database
+  const ratingFieldMap = {
+    'whatDoesItDo': 'isCorrectWhatDoesItDo',
+    'problemItSolves': 'isCorrectProblem',
+    'whoIsItFor': 'isCorrectWhoIsFor',
+    'howToUse': 'isCorrectHowToUse'
+  };
+  
   responsesList.innerHTML = currentRevision.responses.map(resp => {
-    const isCorrect = resp.isCorrect;
-    const ratingButtons = isCorrect === null ? `
-      <div class="rating-buttons">
-        <button class="btn btn-rate correct" onclick="rateResponse(${resp.id}, 1)">✓ Correct</button>
-        <button class="btn btn-rate incorrect" onclick="rateResponse(${resp.id}, 0)">✗ Incorrect</button>
-      </div>
-    ` : `
-      <div class="rating-result ${isCorrect ? 'correct' : 'incorrect'}">
-        ${isCorrect ? '✓ Marked as correct' : '✗ Marked as incorrect'}
-      </div>
-    `;
+    // Generate rating buttons for each field (only if the field has content)
+    const renderRatingButtons = (fieldName, label, value) => {
+      if (!value) return '';
+      const ratingField = ratingFieldMap[fieldName];
+      const isCorrect = resp[ratingField];
+      
+      if (isCorrect === null || isCorrect === undefined) {
+        return `
+          <div class="rating-row">
+            <label>${label}</label>
+            <div class="rating-buttons">
+              <button class="btn btn-rate correct" onclick="rateResponse(${resp.id}, '${fieldName}', 1)">✓</button>
+              <button class="btn btn-rate incorrect" onclick="rateResponse(${resp.id}, '${fieldName}', 0)">✗</button>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="rating-row">
+          <label>${label}</label>
+          <div class="rating-result ${isCorrect ? 'correct' : 'incorrect'}">
+            ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
+          </div>
+        </div>
+      `;
+    };
+    
+    // Build response fields only if they have content
+    let fieldsHtml = '';
+    if (resp.whatDoesItDo) {
+      fieldsHtml += `<div class="response-field"><label>What does this do?</label><p>${escapeHtml(resp.whatDoesItDo)}</p></div>`;
+    }
+    if (resp.problemItSolves) {
+      fieldsHtml += `<div class="response-field"><label>What problem does it solve?</label><p>${escapeHtml(resp.problemItSolves)}</p></div>`;
+    }
+    if (resp.whoIsItFor) {
+      fieldsHtml += `<div class="response-field"><label>Who is this for?</label><p>${escapeHtml(resp.whoIsItFor)}</p></div>`;
+    }
+    if (resp.howToUse) {
+      fieldsHtml += `<div class="response-field"><label>How do you use it?</label><p>${escapeHtml(resp.howToUse)}</p></div>`;
+    }
+    
+    const ratingsHtml = 
+      renderRatingButtons('whatDoesItDo', 'What does this do?', resp.whatDoesItDo) +
+      renderRatingButtons('problemItSolves', 'Problem it solves?', resp.problemItSolves) +
+      renderRatingButtons('whoIsItFor', 'Who is this for?', resp.whoIsItFor) +
+      renderRatingButtons('howToUse', 'How do you use it?', resp.howToUse);
     
     return `
       <div class="response-card">
@@ -172,24 +216,11 @@ function renderResponses() {
           <span>${escapeHtml(resp.displayName || resp.username)}</span>
         </div>
         <div class="response-fields">
-          <div class="response-field">
-            <label>What does this do?</label>
-            <p>${escapeHtml(resp.whatDoesItDo)}</p>
-          </div>
-          <div class="response-field">
-            <label>What problem does it solve?</label>
-            <p>${escapeHtml(resp.problemItSolves)}</p>
-          </div>
-          <div class="response-field">
-            <label>Who is this for?</label>
-            <p>${escapeHtml(resp.whoIsItFor)}</p>
-          </div>
-          <div class="response-field">
-            <label>How do you use it?</label>
-            <p>${escapeHtml(resp.howToUse)}</p>
-          </div>
+          ${fieldsHtml}
         </div>
-        ${ratingButtons}
+        <div class="response-ratings">
+          ${ratingsHtml}
+        </div>
       </div>
     `;
   }).join('');
@@ -339,12 +370,24 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Rate a response (hacker marks it correct or incorrect)
-async function rateResponse(responseId, isCorrect) {
+// Rate a response (hacker marks each answer correct or incorrect)
+async function rateResponse(responseId, fieldName, isCorrect) {
+  // Map field names to API param names
+  const paramMap = {
+    'whatDoesItDo': 'isCorrectWhatDoesItDo',
+    'problemItSolves': 'isCorrectProblem',
+    'whoIsItFor': 'isCorrectWhoIsFor',
+    'howToUse': 'isCorrectHowToUse'
+  };
+  
+  const apiParam = paramMap[fieldName];
+  const body = {};
+  body[apiParam] = isCorrect;
+  
   const res = await fetch(`/api/responses/${responseId}/rate`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ isCorrect })
+    body: JSON.stringify(body)
   });
   
   if (res.ok) {

@@ -52,7 +52,10 @@ db.exec(`
     problemItSolves TEXT,
     whoIsItFor TEXT,
     howToUse TEXT,
-    isCorrect INTEGER DEFAULT NULL, -- NULL = not yet rated, 0 = incorrect, 1 = correct
+    isCorrectWhatDoesItDo INTEGER DEFAULT NULL,
+    isCorrectProblem INTEGER DEFAULT NULL,
+    isCorrectWhoIsFor INTEGER DEFAULT NULL,
+    isCorrectHowToUse INTEGER DEFAULT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (revisionId) REFERENCES revisions(id),
     FOREIGN KEY (userId) REFERENCES users(id)
@@ -212,7 +215,7 @@ app.get('/api/projects/:id', (req, res) => {
   }
   
   const revisions = db.prepare(`
-    SELECT r.*, 
+    SELECT r.id, r.projectId, r.revisionNumber, r.description, r.story, r.videoUrl, r.githubUrl, r.websiteUrl, r.createdAt,
            (SELECT COUNT(*) FROM responses WHERE revisionId = r.id) as responseCount
     FROM revisions r
     WHERE r.projectId = ?
@@ -222,7 +225,9 @@ app.get('/api/projects/:id', (req, res) => {
   // Get responses for each revision
   for (const rev of revisions) {
     rev.responses = db.prepare(`
-      SELECT resp.*, u.username, u.displayName
+      SELECT resp.id, resp.revisionId, resp.userId, resp.whatDoesItDo, resp.problemItSolves, resp.whoIsItFor, resp.howToUse,
+             resp.isCorrectWhatDoesItDo, resp.isCorrectProblem, resp.isCorrectWhoIsFor, resp.isCorrectHowToUse,
+             resp.createdAt, u.username, u.displayName
       FROM responses resp
       JOIN users u ON resp.userId = u.id
       WHERE resp.revisionId = ?
@@ -237,7 +242,7 @@ app.get('/api/projects/:id', (req, res) => {
 // Create new project (or find existing by provenance) with first revision
 app.post('/api/projects', (req, res) => {
   const userId = 1; // Demo user
-  const { title, description, story, videoUrl, githubUrl, websiteUrl, provenanceUrl } = req.body;
+  const { title, description, story, videoUrl, githubUrl, websiteUrl, provenanceUrl, ...pitchAnswers } = req.body;
   
   if (!title || title.length > 200) {
     return res.status(400).json({ error: 'Title is required (max 200 chars)' });
@@ -262,10 +267,18 @@ app.post('/api/projects', (req, res) => {
       ).get(projectId);
       const newRevNum = (maxRev.max || 0) + 1;
       
-      db.prepare(`
+      const revResult = db.prepare(`
         INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
+      
+      // If pitch creator answered the 4 questions, create a self-response
+      if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
+        db.prepare(`
+          INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(revResult.lastInsertRowid, userId, pitchAnswers.whatDoesItDo || '', pitchAnswers.problemItSolves || '', pitchAnswers.whoIsItFor || '', pitchAnswers.howToUse || '');
+      }
       
       return res.json({ id: projectId, revisionNumber: newRevNum, isNewRevision: true });
     }
@@ -279,10 +292,18 @@ app.post('/api/projects', (req, res) => {
   projectId = result.lastInsertRowid;
   
   // Create first revision
-  db.prepare(`
+  const revResult = db.prepare(`
     INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
     VALUES (?, 1, ?, ?, ?, ?, ?)
   `).run(projectId, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
+  
+  // If pitch creator answered the 4 questions, create a self-response
+  if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
+    db.prepare(`
+      INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(revResult.lastInsertRowid, userId, pitchAnswers.whatDoesItDo || '', pitchAnswers.problemItSolves || '', pitchAnswers.whoIsItFor || '', pitchAnswers.howToUse || '');
+  }
   
   res.json({ id: projectId, revisionNumber: 1, isNewProject: true });
 });
@@ -290,7 +311,8 @@ app.post('/api/projects', (req, res) => {
 // Add a new revision to an existing project
 app.post('/api/projects/:id/revisions', (req, res) => {
   const projectId = req.params.id;
-  const { description, story, videoUrl, githubUrl, websiteUrl } = req.body;
+  const userId = 1; // Demo user
+  const { description, story, videoUrl, githubUrl, websiteUrl, ...pitchAnswers } = req.body;
   
   if (!description || description.length > 2000) {
     return res.status(400).json({ error: 'Description is required (max 2000 chars)' });
@@ -302,10 +324,18 @@ app.post('/api/projects/:id/revisions', (req, res) => {
   
   const newRevNum = (maxRev.max || 0) + 1;
   
-  db.prepare(`
+  const revResult = db.prepare(`
     INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
+  
+  // If pitch creator answered the 4 questions, create a self-response
+  if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
+    db.prepare(`
+      INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(revResult.lastInsertRowid, userId, pitchAnswers.whatDoesItDo || '', pitchAnswers.problemItSolves || '', pitchAnswers.whoIsItFor || '', pitchAnswers.howToUse || '');
+  }
   
   res.json({ revisionNumber: newRevNum });
 });
@@ -316,28 +346,52 @@ app.post('/api/revisions/:id/responses', (req, res) => {
   const userId = 1; // Demo user
   const { whatDoesItDo, problemItSolves, whoIsItFor, howToUse } = req.body;
   
-  if (!whatDoesItDo || !problemItSolves || !whoIsItFor || !howToUse) {
-    return res.status(400).json({ error: 'All 4 questions must be answered' });
+  // All 4 fields are optional - people can skip any they want
+  if (!whatDoesItDo && !problemItSolves && !whoIsItFor && !howToUse) {
+    return res.status(400).json({ error: 'At least one question must be answered' });
   }
   
   const result = db.prepare(`
     INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse);
+  `).run(revisionId, userId, whatDoesItDo || '', problemItSolves || '', whoIsItFor || '', howToUse || '');
   
   res.json({ id: result.lastInsertRowid });
 });
 
-// Rate a response (hacker marks it correct or incorrect)
+// Rate a response (hacker marks each answer correct or incorrect)
 app.patch('/api/responses/:id/rate', (req, res) => {
   const responseId = req.params.id;
-  const { isCorrect } = req.body;
+  const { isCorrectWhatDoesItDo, isCorrectProblem, isCorrectWhoIsFor, isCorrectHowToUse } = req.body;
   
-  if (typeof isCorrect !== 'number' || (isCorrect !== 0 && isCorrect !== 1)) {
-    return res.status(400).json({ error: 'isCorrect must be 0 (incorrect) or 1 (correct)' });
+  // Each rating field must be 0, 1, or null (to clear)
+  const validValues = [0, 1, null];
+  if (isCorrectWhatDoesItDo !== undefined && !validValues.includes(isCorrectWhatDoesItDo)) {
+    return res.status(400).json({ error: 'Rating must be 0, 1, or null' });
+  }
+  if (isCorrectProblem !== undefined && !validValues.includes(isCorrectProblem)) {
+    return res.status(400).json({ error: 'Rating must be 0, 1, or null' });
+  }
+  if (isCorrectWhoIsFor !== undefined && !validValues.includes(isCorrectWhoIsFor)) {
+    return res.status(400).json({ error: 'Rating must be 0, 1, or null' });
+  }
+  if (isCorrectHowToUse !== undefined && !validValues.includes(isCorrectHowToUse)) {
+    return res.status(400).json({ error: 'Rating must be 0, 1, or null' });
   }
   
-  db.prepare('UPDATE responses SET isCorrect = ? WHERE id = ?').run(isCorrect, responseId);
+  if (isCorrectWhatDoesItDo !== undefined) {
+    db.prepare('UPDATE responses SET isCorrectWhatDoesItDo = ? WHERE id = ?').run(isCorrectWhatDoesItDo, responseId);
+  }
+  if (isCorrectProblem !== undefined) {
+    db.prepare('UPDATE responses SET isCorrectProblem = ? WHERE id = ?').run(isCorrectProblem, responseId);
+  }
+  if (isCorrectWhoIsFor !== undefined) {
+    db.prepare('UPDATE responses SET isCorrectWhoIsFor = ? WHERE id = ?').run(isCorrectWhoIsFor, responseId);
+  }
+  if (isCorrectHowToUse !== undefined) {
+    db.prepare('UPDATE responses SET isCorrectHowToUse = ? WHERE id = ?').run(isCorrectHowToUse, responseId);
+  }
+  
   res.json({ ok: true });
 });
 
@@ -406,6 +460,11 @@ app.get('/project/:id', (req, res) => {
 // Serve edit.html for /edit route
 app.get('/edit', (req, res) => {
   res.sendFile(__dirname + '/public/edit.html');
+});
+
+// Serve import.html for /import route
+app.get('/import', (req, res) => {
+  res.sendFile(__dirname + '/public/import.html');
 });
 
 const PORT = process.env.PORT || 3000;

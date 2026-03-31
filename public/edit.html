@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Pitch - PitchTheHack</title>
+  <title>Add Pitch - pitchmasters.club</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header>
     <div class="header-content">
-      <h1><a href="/">PitchTheHack</a></h1>
+      <h1><a href="/">pitchmasters.club</a></h1>
       <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
       <div id="auth-section"></div>
     </div>
@@ -33,6 +33,31 @@
         <div class="form-group">
           <label for="description">Short Description</label>
           <textarea id="description" name="description" rows="2" required placeholder="One sentence about what this project does..."></textarea>
+        </div>
+        
+        <div class="form-section-divider">
+          <h3>Your Pitch Answers (hidden from viewers)</h3>
+          <p class="form-hint">Answer these 4 questions about your project. They're hidden from the pitch page but used to score audience answers.</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="pitchWhatDoesItDo">What does this do?</label>
+          <textarea id="pitchWhatDoesItDo" name="pitchWhatDoesItDo" rows="2" placeholder="Describe what the project is..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="pitchProblemItSolves">What problem does it solve?</label>
+          <textarea id="pitchProblemItSolves" name="pitchProblemItSolves" rows="2" placeholder="What pain point does it address?"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="pitchWhoIsItFor">Who is this for?</label>
+          <textarea id="pitchWhoIsItFor" name="pitchWhoIsItFor" rows="2" placeholder="Who is the target audience?"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="pitchHowToUse">How do you use it?</label>
+          <textarea id="pitchHowToUse" name="pitchHowToUse" rows="2" placeholder="How would someone use this?"></textarea>
         </div>
         
         <div class="form-group">

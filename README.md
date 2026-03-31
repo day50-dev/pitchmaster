@@ -1,6 +1,6 @@
 # Purpose 
 
-PitchTheHack is a free platform for technologists who have built things at hackathons or otherwise online and passionately believe they made something valuable and ready for market but pitched them terribly aren't getting any traction online. 
+pitchmasters.club is a free platform for technologists who have built things at hackathons or otherwise online and passionately believe they made something valuable and ready for market but pitched them terribly aren't getting any traction online. 
 
 It's for open minded people who assume they are doing things terribly wrong and want to expose themselves to real feedback to quickly improve without having to work another weekend for a 5 minute opportunity to blow it.
 
@@ -27,7 +27,7 @@ I mean it's bullshit that people who know thow to smile and nod their head bette
 There can be a live channel but that's more a discord or other platform thing ... you can hook things back to the site via bots for that but it's best to not try to solve the live conference problem
 
 # Overview
-PitchTheHack has users wihch have projects. Each project has one or more revisions. Globally Unique revision ids are first class objects.
+pitchmasters.club has users wihch have projects. Each project has one or more revisions. Globally Unique revision ids are first class objects.
 
 The revision has a few things:
     video - youtube 

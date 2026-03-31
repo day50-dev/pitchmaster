@@ -1,8 +1,8 @@
-# PitchTheHack
+# pitchmasters.club
 
 ## What It Is
 
-PitchTheHack is a **community self-improvement tool for hackers** to practice and improve their pitching skills.
+pitchmasters.club is a **community self-improvement tool for hackers** to practice and improve their pitching skills.
 
 **The deeper insight:** Messaging and communication is natural and effortless for some people, but extractively difficult and opaque for others who may be very talented and skilled at building products. People can spend years reading startup books and all the classics, but this is like trying to learn karate by only reading books - you need to practice, get feedback, and iterate.
 

@@ -1,7 +1,7 @@
 {
   "name": "pitchthehack",
   "version": "1.0.0",
-  "description": "PitchTheHack - platform for re-pitching hackathon projects",
+  "description": "pitchmasters.club - platform for re-pitching hackathon projects",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
