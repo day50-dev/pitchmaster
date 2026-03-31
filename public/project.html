@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project - PitchTheHack</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header>
@@ -45,33 +45,57 @@
         </div>
       </div>
 
-      <div class="audience-section">
-        <h3>Audience Decoding</h3>
-        <p class="audience-pitch">Before viewing the pitch, try to answer these questions based on what you see here:</p>
-        
-        <form id="response-form">
-          <div class="form-group">
-            <label for="whatDoesItDo">What does this do?</label>
-            <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" required placeholder="Describe what you think this project does..."></textarea>
-          </div>
+      <div class="audience-section collapsed" id="audience-section">
+        <div class="audience-header" onclick="toggleSection('audience-section')">
+          <h3>🎯 Share Your Take</h3>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div class="audience-content">
+          <p class="audience-pitch">Before viewing the pitch, try to answer these questions. Your first impression matters!</p>
           
-          <div class="form-group">
-            <label for="whyValuable">Why is it valuable?</label>
-            <textarea id="whyValuable" name="whyValuable" rows="2" required placeholder="What problem does it solve? Why would someone use it?"></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label for="whoIsItFor">Who is this for?</label>
-            <textarea id="whoIsItFor" name="whoIsItFor" rows="2" required placeholder="Who is the target audience?"></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label for="howToUse">How do you use it?</label>
-            <textarea id="howToUse" name="howToUse" rows="2" required placeholder="What's the user flow?"></textarea>
-          </div>
-          
-          <button type="submit" class="btn btn-primary">Submit Response</button>
-        </form>
+          <form id="response-form">
+            <div class="form-step active" data-step="1">
+              <div class="form-group">
+                <label for="whatDoesItDo">What does this do?</label>
+                <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" placeholder="Quick impressions first..."></textarea>
+              </div>
+              <button type="button" class="btn btn-primary next-step">Next</button>
+            </div>
+            
+            <div class="form-step" data-step="2">
+              <div class="form-group">
+                <label for="whyValuable">Why is it valuable?</label>
+                <textarea id="whyValuable" name="whyValuable" rows="2" placeholder="What problem does it solve?"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">Back</button>
+                <button type="button" class="btn btn-primary next-step">Next</button>
+              </div>
+            </div>
+            
+            <div class="form-step" data-step="3">
+              <div class="form-group">
+                <label for="whoIsItFor">Who is this for?</label>
+                <textarea id="whoIsItFor" name="whoIsItFor" rows="2" placeholder="Target audience?"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">Back</button>
+                <button type="button" class="btn btn-primary next-step">Next</button>
+              </div>
+            </div>
+            
+            <div class="form-step" data-step="4">
+              <div class="form-group">
+                <label for="howToUse">How do you use it?</label>
+                <textarea id="howToUse" name="howToUse" rows="2" placeholder="User flow?"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">Back</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
 
@@ -80,30 +104,52 @@
       <div id="responses-list"></div>
     </section>
 
-    <section id="add-revision-section">
-      <h3>Add New Revision</h3>
-      <form id="revision-form">
-        <div class="form-group">
-          <label for="rev-description">Description</label>
-          <textarea id="rev-description" name="description" rows="4" required placeholder="Updated description, new features, etc."></textarea>
-        </div>
-        <div class="form-group">
-          <label for="rev-video">YouTube URL</label>
-          <input type="url" id="rev-video" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
-        </div>
-        <div class="form-group">
-          <label for="rev-github">GitHub URL</label>
-          <input type="url" id="rev-github" name="githubUrl" placeholder="https://github.com/...">
-        </div>
-        <div class="form-group">
-          <label for="rev-website">Website URL</label>
-          <input type="url" id="rev-website" name="websiteUrl" placeholder="https://...">
-        </div>
-        <button type="submit" class="btn btn-primary">Add Revision</button>
-      </form>
+    <section class="add-revision-section collapsed" id="add-revision-section">
+      <div class="add-revision-header" onclick="toggleSection('add-revision-section')">
+        <h3>✏️ Add Revision</h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="add-revision-content">
+        <form id="revision-form">
+          <div class="form-step active" data-step="1">
+            <div class="form-group">
+              <label for="rev-description">What's new?</label>
+              <textarea id="rev-description" name="description" rows="3" placeholder="Describe your updated pitch..."></textarea>
+            </div>
+            <button type="button" class="btn btn-primary next-step">Next</button>
+          </div>
+          
+          <div class="form-step" data-step="2">
+            <p class="step-hint">Add links (optional)</p>
+            <div class="form-group">
+              <label for="rev-video">Video</label>
+              <input type="url" id="rev-video" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+            </div>
+            <div class="form-group">
+              <label for="rev-github">GitHub</label>
+              <input type="url" id="rev-github" name="githubUrl" placeholder="https://github.com/...">
+            </div>
+            <div class="form-group">
+              <label for="rev-website">Website</label>
+              <input type="url" id="rev-website" name="websiteUrl" placeholder="https://...">
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary prev-step">Back</button>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </section>
+    
+    <script>
+      function toggleSection(id) {
+        const section = document.getElementById(id);
+        section.classList.toggle('collapsed');
+      }
+    </script>
   </main>
 
-  <script src="project.js"></script>
+  <script src="/project.js"></script>
 </body>
 </html>

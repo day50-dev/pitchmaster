@@ -11,16 +11,19 @@ count_records() {
     try {
       const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
       const projectCount = db.prepare('SELECT COUNT(*) as c FROM projects').get().c;
-      console.log(userCount + ' users, ' + projectCount + ' projects');
+      const revisionCount = db.prepare('SELECT COUNT(*) as c FROM revisions').get().c;
+      const responseCount = db.prepare('SELECT COUNT(*) as c FROM responses').get().c;
+      console.log(userCount + ' users, ' + projectCount + ' projects, ' + revisionCount + ' revisions, ' + responseCount + ' responses');
     } catch (e) {
-      console.log('0 users, 0 projects');
+      console.log('0 users, 0 projects, 0 revisions, 0 responses');
     }
     db.close();
   "
 }
 
-if [ ! -f "$DB_FILE" ]; then
-  echo "Database file '$DB_FILE' not found. Creating fresh..."
+# Recreate database with correct schema
+recreate_db() {
+  rm -f "$DB_FILE"
   node -e "
     const Database = require('better-sqlite3');
     const db = new Database('pitchthehack.db');
@@ -33,21 +36,49 @@ if [ ! -f "$DB_FILE" ]; then
         avatarUrl TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
       CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         userId INTEGER,
         title TEXT,
+        provenanceUrl TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES users(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS revisions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        projectId INTEGER,
+        revisionNumber INTEGER,
         description TEXT,
         videoUrl TEXT,
         githubUrl TEXT,
         websiteUrl TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (projectId) REFERENCES projects(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS responses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        revisionId INTEGER,
+        userId INTEGER,
+        whatDoesItDo TEXT,
+        whyValuable TEXT,
+        whoIsItFor TEXT,
+        howToUse TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (revisionId) REFERENCES revisions(id),
         FOREIGN KEY (userId) REFERENCES users(id)
       );
     \`);
-    db.prepare('INSERT INTO users (id, username, displayName) VALUES (1, ?, ?)').run('demo', 'Demo User');
-    console.log('Database created and initialized.');
+    db.prepare('INSERT INTO users (id, username, displayName) VALUES (?, ?, ?)').run(1, 'demo', 'Demo User');
+    console.log('Database recreated with correct schema');
   "
+}
+
+if [ ! -f "$DB_FILE" ]; then
+  echo "Database file '$DB_FILE' not found. Creating fresh..."
+  recreate_db
   echo "Currently have $(count_records)"
   echo "Done!"
   exit 0
@@ -55,36 +86,6 @@ fi
 
 echo "Currently have $(count_records)"
 echo "Clearing database..."
-
-# Delete and recreate
-rm -f "$DB_FILE"
-
-node -e "
-  const Database = require('better-sqlite3');
-  const db = new Database('pitchthehack.db');
-  db.exec(\`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      githubId TEXT UNIQUE,
-      username TEXT,
-      displayName TEXT,
-      avatarUrl TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS projects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      userId INTEGER,
-      title TEXT,
-      description TEXT,
-      videoUrl TEXT,
-      githubUrl TEXT,
-      websiteUrl TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES users(id)
-    );
-  \`);
-  db.prepare('INSERT INTO users (id, username, displayName) VALUES (1, ?, ?)').run('demo', 'Demo User');
-"
-
+recreate_db
 echo "Currently have $(count_records)"
 echo "Done! Database has been reset."

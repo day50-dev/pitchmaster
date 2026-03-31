@@ -107,47 +107,50 @@ function parseDevpost(html, url) {
                      html.match(/<title>([^<]+)<\/title>/i);
   if (titleMatch) result.title = titleMatch[1].trim();
   
-  // Extract detailed description from the Story section
-  const storySectionMatch = html.match(/<div class="large-9 columns" id="app-details-left"[\s\S]*?<div>[\s\S]*?<\/div>[\s\S]*?<div id="built-with"/i);
-  if (storySectionMatch) {
-    const storyHtml = storySectionMatch[0];
-    const storyParts = [];
-    const h2Regex = /<h2>([^<]+)<\/h2>[\s\S]*?<p>([\s\S]*?)<\/p>/gi;
-    let h2Match;
-    while ((h2Match = h2Regex.exec(storyHtml)) !== null) {
-      const heading = h2Match[1].trim();
-      const content = h2Match[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      if (content) {
-        storyParts.push(`${heading}: ${content}`);
+  // Extract longer description from #app-details-left in the article
+  // This contains the full "Story" description
+  const appDetailsMatch = html.match(/<article[^>]*id="app-details"[\s\S]*?<\/article>/i);
+  if (appDetailsMatch) {
+    // Get the first paragraph text (the longer description)
+    const descMatch = appDetailsMatch[0].match(/<div>[\s\S]*?<p>([\s\S]*?)<\/p>/i);
+    if (descMatch) {
+      const descText = descMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (descText.length > 20) {
+        result.description = descText;
       }
-    }
-    if (storyParts.length > 0) {
-      result.description = storyParts.join('\n\n');
     }
   }
   
-  // Fallback to og:description if Story section not found
+  // Fallback to og:description if longer description not found
   if (!result.description) {
     const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i) ||
                       html.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
     if (descMatch) result.description = descMatch[1].trim();
   }
   
-  // Extract GitHub URL from software_urls section
-  const githubMatch = html.match(/href="(https?:\/\/github\.com\/[^"]+)"/i);
-  if (githubMatch) result.githubUrl = githubMatch[1];
-  
-  // Extract YouTube video from embed or link
-  const youtubeMatch = html.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/i) ||
-                       html.match(/href="(https?:\/\/www\.youtube\.com\/watch\?v=[^"]+)"/i);
-  if (youtubeMatch) {
-    const videoId = youtubeMatch[1];
-    result.videoUrl = youtubeMatch[0].includes('embed') ? `https://youtube.com/watch?v=${videoId}` : youtubeMatch[1];
+  // Extract YouTube video from embed tag (iframe) - this is the embedded player
+  const youtubeEmbedMatch = html.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/i);
+  if (youtubeEmbedMatch) {
+    result.videoUrl = `https://youtube.com/watch?v=${youtubeEmbedMatch[1]}`;
   }
   
-  // Extract website URL (not devpost itself)
-  const websiteMatch = html.match(/href="(https?:\/\/(?!devpost\.com)[^"]+)"/i);
-  if (websiteMatch) result.websiteUrl = websiteMatch[1];
+  // Extract GitHub URL - look in the "Try it out" section
+  const tryItOutSection = html.match(/<h2[^>]*>\s*Try it out[\s\S]*?<\/h2>([\s\S]*?)<\/nav>/i);
+  if (tryItOutSection) {
+    const githubMatch = tryItOutSection[1].match(/href="(https?:\/\/github\.com\/[^"]+)"/i);
+    if (githubMatch) result.githubUrl = githubMatch[1];
+  }
+  // Fallback: any github.com link in the page
+  if (!result.githubUrl) {
+    const githubMatch = html.match(/href="(https?:\/\/github\.com\/[^"]+)"/i);
+    if (githubMatch) result.githubUrl = githubMatch[1];
+  }
+  
+  // Extract website URL from "Try it out" section (not devpost itself)
+  if (tryItOutSection) {
+    const websiteMatch = tryItOutSection[1].match(/href="(https?:\/\/(?!devpost\.com)[^"]+)"/i);
+    if (websiteMatch) result.websiteUrl = websiteMatch[1];
+  }
   
   return result;
 }
@@ -378,6 +381,11 @@ app.post('/api/import/devpost/profile', async (req, res) => {
   const html = await fetchUrl(profileUrl);
   const profileData = parseDevpostProfile(html, username);
   res.json(profileData);
+});
+
+// Serve project.html for /project/:id routes
+app.get('/project/:id', (req, res) => {
+  res.sendFile(__dirname + '/public/project.html');
 });
 
 const PORT = process.env.PORT || 3000;

@@ -156,6 +156,54 @@ function renderResponses() {
   `).join('');
 }
 
+// Form step navigation for progressive disclosure (project page)
+document.querySelectorAll('#response-form, #revision-form').forEach(form => {
+  form.addEventListener('click', (e) => {
+    if (e.target.classList.contains('next-step')) {
+      const currentStep = form.querySelector('.form-step.active');
+      const nextStep = currentStep.nextElementSibling;
+      if (nextStep && nextStep.classList.contains('form-step')) {
+        currentStep.classList.remove('active');
+        nextStep.classList.add('active');
+      }
+    } else if (e.target.classList.contains('prev-step')) {
+      const currentStep = form.querySelector('.form-step.active');
+      const prevStep = currentStep.previousElementSibling;
+      if (prevStep && prevStep.classList.contains('form-step')) {
+        currentStep.classList.remove('active');
+        prevStep.classList.add('active');
+      }
+    }
+  });
+});
+
+// Reset form steps when section collapses
+document.getElementById('audience-section').addEventListener('click', (e) => {
+  if (e.target.classList.contains('toggle-icon') || e.target.closest('.audience-header')) {
+    setTimeout(() => {
+      const section = document.getElementById('audience-section');
+      if (section.classList.contains('collapsed')) {
+        section.querySelectorAll('.form-step').forEach((step, i) => {
+          step.classList.toggle('active', i === 0);
+        });
+      }
+    }, 300);
+  }
+});
+
+document.getElementById('add-revision-section').addEventListener('click', (e) => {
+  if (e.target.classList.contains('toggle-icon') || e.target.closest('.add-revision-header')) {
+    setTimeout(() => {
+      const section = document.getElementById('add-revision-section');
+      if (section.classList.contains('collapsed')) {
+        section.querySelectorAll('.form-step').forEach((step, i) => {
+          step.classList.toggle('active', i === 0);
+        });
+      }
+    }, 300);
+  }
+});
+
 // Response form handler
 document.getElementById('response-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -175,8 +223,13 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
   });
   
   if (res.ok) {
-    // Clear form
+    // Clear form and reset steps
     document.getElementById('response-form').reset();
+    document.querySelectorAll('#response-form .form-step').forEach((step, i) => {
+      step.classList.toggle('active', i === 0);
+    });
+    // Collapse the section
+    document.getElementById('audience-section').classList.add('collapsed');
     // Reload project to get updated responses
     await loadProject();
     // Re-select current revision and render responses
@@ -186,9 +239,28 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
       renderResponses();
     }
   } else {
-    alert('Failed to submit response');
+    const err = await res.json();
+    alert('Failed to submit response: ' + (err.error || 'Unknown error'));
   }
 });
+
+// Reset form steps after submission and close
+async function resetFormSteps() {
+  // Collapse sections and reset forms
+  const audienceSection = document.getElementById('audience-section');
+  const revisionSection = document.getElementById('add-revision-section');
+  
+  audienceSection.classList.add('collapsed');
+  revisionSection.classList.add('collapsed');
+  
+  // Reset step positions
+  audienceSection.querySelectorAll('.form-step').forEach((step, i) => {
+    step.classList.toggle('active', i === 0);
+  });
+  revisionSection.querySelectorAll('.form-step').forEach((step, i) => {
+    step.classList.toggle('active', i === 0);
+  });
+}
 
 // Add revision form handler
 document.getElementById('revision-form').addEventListener('submit', async (e) => {
@@ -209,13 +281,14 @@ document.getElementById('revision-form').addEventListener('submit', async (e) =>
   
   if (res.ok) {
     const result = await res.json();
-    alert(`Revision ${result.revisionNumber} added!`);
-    // Clear form
+    // Reset form and collapse section
     document.getElementById('revision-form').reset();
+    await resetFormSteps();
     // Reload project
     await loadProject();
   } else {
-    alert('Failed to add revision');
+    const err = await res.json();
+    alert('Failed to add revision: ' + (err.error || 'Unknown error'));
   }
 });
 

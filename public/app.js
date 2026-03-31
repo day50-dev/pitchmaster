@@ -113,6 +113,53 @@ projectModal.addEventListener('click', (e) => {
   if (e.target === projectModal) projectModal.classList.add('hidden');
 });
 
+// Form step navigation for progressive disclosure
+document.querySelectorAll('form').forEach(form => {
+  const steps = form.querySelectorAll('.form-step');
+  
+  form.addEventListener('click', (e) => {
+    if (e.target.classList.contains('next-step')) {
+      const currentStep = form.querySelector('.form-step.active');
+      const nextStep = currentStep.nextElementSibling;
+      if (nextStep && nextStep.classList.contains('form-step')) {
+        // Validate current step
+        const inputs = currentStep.querySelectorAll('input, textarea');
+        let valid = true;
+        inputs.forEach(input => {
+          if (input.hasAttribute('required') && !input.value.trim()) {
+            input.style.borderColor = '#ef4444';
+            valid = false;
+          } else {
+            input.style.borderColor = '';
+          }
+        });
+        if (valid) {
+          currentStep.classList.remove('active');
+          nextStep.classList.add('active');
+        }
+      }
+    } else if (e.target.classList.contains('prev-step')) {
+      const currentStep = form.querySelector('.form-step.active');
+      const prevStep = currentStep.previousElementSibling;
+      if (prevStep && prevStep.classList.contains('form-step')) {
+        currentStep.classList.remove('active');
+        prevStep.classList.add('active');
+      }
+    }
+  });
+});
+
+// Reset form steps when modal closes
+[projectModal, importModal, profileImportModal].forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.querySelectorAll('.form-step').forEach((step, i) => {
+        step.classList.toggle('active', i === 0);
+      });
+    }
+  });
+});
+
 projectForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(projectForm);
@@ -133,9 +180,14 @@ projectForm.addEventListener('submit', async (e) => {
   if (res.ok) {
     projectForm.reset();
     projectModal.classList.add('hidden');
+    // Reset steps
+    projectForm.querySelectorAll('.form-step').forEach((step, i) => {
+      step.classList.toggle('active', i === 0);
+    });
     loadProjects();
   } else {
-    alert('Failed to add project');
+    const err = await res.json();
+    alert('Failed to add project: ' + (err.error || res.statusText));
   }
 });
 
@@ -184,11 +236,25 @@ importForm.addEventListener('submit', async (e) => {
 });
 
 function showImportPreview(data) {
-  document.getElementById('preview-title').textContent = data.title || '(none)';
-  document.getElementById('preview-description').textContent = data.description ? (data.description.substring(0, 100) + (data.description.length > 100 ? '...' : '')) : '(none)';
-  document.getElementById('preview-github').textContent = data.githubUrl || '(none)';
-  document.getElementById('preview-video').textContent = data.videoUrl || '(none)';
-  document.getElementById('preview-website').textContent = data.websiteUrl || '(none)';
+  // Hide form, show preview
+  importForm.querySelector('.form-step').classList.remove('active');
+  
+  document.getElementById('preview-title').textContent = data.title || 'Untitled';
+  const descEl = document.getElementById('preview-description');
+  descEl.textContent = data.description ? (data.description.substring(0, 200) + (data.description.length > 200 ? '...' : '')) : 'No description';
+  
+  const githubEl = document.getElementById('preview-github');
+  githubEl.textContent = data.githubUrl ? 'GitHub' : '';
+  githubEl.style.display = data.githubUrl ? 'inline-block' : 'none';
+  
+  const videoEl = document.getElementById('preview-video');
+  videoEl.textContent = data.videoUrl ? 'Video' : '';
+  videoEl.style.display = data.videoUrl ? 'inline-block' : 'none';
+  
+  const websiteEl = document.getElementById('preview-website');
+  websiteEl.textContent = data.websiteUrl ? 'Site' : '';
+  websiteEl.style.display = data.websiteUrl ? 'inline-block' : 'none';
+  
   importPreview.classList.remove('hidden');
 }
 
@@ -196,9 +262,18 @@ function resetImportForm() {
   importForm.reset();
   importPreview.classList.add('hidden');
   importedData = null;
+  // Reset to step 1
+  importForm.querySelector('.form-step').classList.add('active');
 }
 
-saveImportBtn.addEventListener('click', async () => {
+// Edit import button - go back to edit
+document.getElementById('edit-import-btn')?.addEventListener('click', () => {
+  importPreview.classList.add('hidden');
+  importForm.querySelector('.form-step').classList.add('active');
+});
+
+// Save import button handler is now inline in HTML click handler
+document.getElementById('save-import-btn').addEventListener('click', async () => {
   if (!importedData) return;
   
   const res = await fetch('/api/projects', {
@@ -222,7 +297,8 @@ saveImportBtn.addEventListener('click', async () => {
     // Navigate to project page
     window.location.href = `/project/${result.id}`;
   } else {
-    alert('Failed to save project');
+    const err = await res.json();
+    alert('Failed to save project: ' + (err.error || res.statusText));
   }
 });
 
