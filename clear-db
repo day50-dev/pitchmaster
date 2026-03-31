@@ -1,0 +1,90 @@
+#!/bin/bash
+# Clear the database for fresh testing
+
+DB_FILE="pitchthehack.db"
+
+# Function to count records in database
+count_records() {
+  node -e "
+    const Database = require('better-sqlite3');
+    const db = new Database('$DB_FILE', { readonly: true });
+    try {
+      const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+      const projectCount = db.prepare('SELECT COUNT(*) as c FROM projects').get().c;
+      console.log(userCount + ' users, ' + projectCount + ' projects');
+    } catch (e) {
+      console.log('0 users, 0 projects');
+    }
+    db.close();
+  "
+}
+
+if [ ! -f "$DB_FILE" ]; then
+  echo "Database file '$DB_FILE' not found. Creating fresh..."
+  node -e "
+    const Database = require('better-sqlite3');
+    const db = new Database('pitchthehack.db');
+    db.exec(\`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        githubId TEXT UNIQUE,
+        username TEXT,
+        displayName TEXT,
+        avatarUrl TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId INTEGER,
+        title TEXT,
+        description TEXT,
+        videoUrl TEXT,
+        githubUrl TEXT,
+        websiteUrl TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES users(id)
+      );
+    \`);
+    db.prepare('INSERT INTO users (id, username, displayName) VALUES (1, ?, ?)').run('demo', 'Demo User');
+    console.log('Database created and initialized.');
+  "
+  echo "Currently have $(count_records)"
+  echo "Done!"
+  exit 0
+fi
+
+echo "Currently have $(count_records)"
+echo "Clearing database..."
+
+# Delete and recreate
+rm -f "$DB_FILE"
+
+node -e "
+  const Database = require('better-sqlite3');
+  const db = new Database('pitchthehack.db');
+  db.exec(\`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      githubId TEXT UNIQUE,
+      username TEXT,
+      displayName TEXT,
+      avatarUrl TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
+      title TEXT,
+      description TEXT,
+      videoUrl TEXT,
+      githubUrl TEXT,
+      websiteUrl TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES users(id)
+    );
+  \`);
+  db.prepare('INSERT INTO users (id, username, displayName) VALUES (1, ?, ?)').run('demo', 'Demo User');
+"
+
+echo "Currently have $(count_records)"
+echo "Done! Database has been reset."

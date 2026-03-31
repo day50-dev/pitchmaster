@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project - PitchTheHack</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1><a href="/">PitchTheHack</a></h1>
+      <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+      <div id="auth-section"></div>
+    </div>
+  </header>
+
+  <main id="project-main">
+    <a href="/" class="back-link">« Back to Projects</a>
+    
+    <section id="project-header">
+      <h2 id="project-title">Loading...</h2>
+      <div class="project-meta">
+        <span id="project-author"></span>
+        <span id="project-provenance"></span>
+      </div>
+    </section>
+
+    <section id="revision-selector">
+      <h3>Revisions</h3>
+      <div id="revision-tabs"></div>
+    </section>
+
+    <section id="current-revision">
+      <div class="revision-content">
+        <div class="revision-links">
+          <a id="revision-video" href="" target="_blank" class="project-link youtube">Watch Video</a>
+          <a id="revision-github" href="" target="_blank" class="project-link github">View Code</a>
+          <a id="revision-website" href="" target="_blank" class="project-link website">Visit Site</a>
+        </div>
+        
+        <div class="revision-description">
+          <h3>Description</h3>
+          <div id="revision-description-text"></div>
+        </div>
+      </div>
+
+      <div class="audience-section">
+        <h3>Audience Decoding</h3>
+        <p class="audience-pitch">Before viewing the pitch, try to answer these questions based on what you see here:</p>
+        
+        <form id="response-form">
+          <div class="form-group">
+            <label for="whatDoesItDo">What does this do?</label>
+            <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" required placeholder="Describe what you think this project does..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="whyValuable">Why is it valuable?</label>
+            <textarea id="whyValuable" name="whyValuable" rows="2" required placeholder="What problem does it solve? Why would someone use it?"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="whoIsItFor">Who is this for?</label>
+            <textarea id="whoIsItFor" name="whoIsItFor" rows="2" required placeholder="Who is the target audience?"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="howToUse">How do you use it?</label>
+            <textarea id="howToUse" name="howToUse" rows="2" required placeholder="What's the user flow?"></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Submit Response</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="responses-section">
+      <h3>Audience Responses (<span id="response-count">0</span>)</h3>
+      <div id="responses-list"></div>
+    </section>
+
+    <section id="add-revision-section">
+      <h3>Add New Revision</h3>
+      <form id="revision-form">
+        <div class="form-group">
+          <label for="rev-description">Description</label>
+          <textarea id="rev-description" name="description" rows="4" required placeholder="Updated description, new features, etc."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="rev-video">YouTube URL</label>
+          <input type="url" id="rev-video" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+        </div>
+        <div class="form-group">
+          <label for="rev-github">GitHub URL</label>
+          <input type="url" id="rev-github" name="githubUrl" placeholder="https://github.com/...">
+        </div>
+        <div class="form-group">
+          <label for="rev-website">Website URL</label>
+          <input type="url" id="rev-website" name="websiteUrl" placeholder="https://...">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Revision</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="project.js"></script>
+</body>
+</html>

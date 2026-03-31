@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PitchTheHack</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>PitchTheHack</h1>
+      <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+      <div id="auth-section"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="projects-section">
+      <div class="section-header">
+        <h2>Projects</h2>
+        <div class="header-buttons">
+          <button id="import-devpost-btn" class="btn btn-secondary">Import Project</button>
+          <button id="import-profile-btn" class="btn btn-secondary">Import All (username)</button>
+          <button id="add-project-btn" class="btn btn-primary hidden">Add Project</button>
+        </div>
+      </div>
+      <div id="projects-list"></div>
+    </section>
+  </main>
+
+  <div id="project-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h3>Add New Project</h3>
+      <form id="project-form">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="videoUrl">YouTube Video URL</label>
+          <input type="url" id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+        </div>
+        <div class="form-group">
+          <label for="githubUrl">GitHub Repository</label>
+          <input type="url" id="githubUrl" name="githubUrl" placeholder="https://github.com/...">
+        </div>
+        <div class="form-group">
+          <label for="websiteUrl">Website URL</label>
+          <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://...">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Project</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="import-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-modal" id="close-import">&times;</span>
+      <h3>Import from Devpost</h3>
+      <p class="modal-description">Paste a Devpost project URL to import its details automatically.</p>
+      <form id="import-form">
+        <div class="form-group">
+          <label for="devpost-url">Devpost URL</label>
+          <input type="url" id="devpost-url" name="devpost-url" placeholder="https://devpost.com/software/your-project" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="import-btn">Import</button>
+      </form>
+      <div id="import-preview" class="import-preview hidden">
+        <h4>Preview</h4>
+        <div class="preview-field">
+          <label>Title:</label>
+          <span id="preview-title"></span>
+        </div>
+        <div class="preview-field">
+          <label>Description:</label>
+          <span id="preview-description"></span>
+        </div>
+        <div class="preview-field">
+          <label>GitHub:</label>
+          <span id="preview-github"></span>
+        </div>
+        <div class="preview-field">
+          <label>Video:</label>
+          <span id="preview-video"></span>
+        </div>
+        <div class="preview-field">
+          <label>Website:</label>
+          <span id="preview-website"></span>
+        </div>
+        <button type="button" class="btn btn-primary" id="save-import-btn">Save Project</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-import-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-modal" id="close-profile-import">&times;</span>
+      <h3>Import All Projects</h3>
+      <p class="modal-description">Enter a Devpost username to import all their projects at once.</p>
+      <form id="profile-import-form">
+        <div class="form-group">
+          <label for="devpost-username">Devpost Username</label>
+          <input type="text" id="devpost-username" name="devpost-username" placeholder="kristopolous" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="profile-import-btn">Find Projects</button>
+      </form>
+      <div id="profile-preview" class="profile-preview hidden">
+        <h4><span id="profile-user-name"></span>'s Projects (<span id="profile-count">0</span>)</h4>
+        <div id="project-select-list" class="project-select-list"></div>
+        <div class="import-actions">
+          <button type="button" class="btn btn-secondary" id="select-all-btn">Select All</button>
+          <button type="button" class="btn btn-primary" id="import-selected-btn">Import Selected</button>
+        </div>
+      </div>
+      <div id="import-progress" class="import-progress hidden">
+        <p>Importing projects...</p>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <p id="import-status"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
