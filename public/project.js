@@ -129,6 +129,16 @@ function selectRevision(revision) {
   // Update description
   document.getElementById('revision-description-text').innerHTML = escapeHtml(revision.description || '').replace(/\n/g, '<br>');
   
+  // Update story
+  const storySection = document.getElementById('revision-story-section');
+  const storyText = document.getElementById('revision-story-text');
+  if (revision.story) {
+    storyText.innerHTML = escapeHtml(revision.story).replace(/\n/g, '<br>');
+    storySection.classList.remove('hidden');
+  } else {
+    storySection.classList.add('hidden');
+  }
+  
   // Update form action
   document.getElementById('response-form').dataset.revisionId = revision.id;
 }
@@ -161,8 +171,23 @@ function renderResponses() {
           <img src="https://github.com/ghost.png" alt="${escapeHtml(resp.username)}">
           <span>${escapeHtml(resp.displayName || resp.username)}</span>
         </div>
-        <div class="response-content">
-          <p>${escapeHtml(resp.description)}</p>
+        <div class="response-fields">
+          <div class="response-field">
+            <label>What does this do?</label>
+            <p>${escapeHtml(resp.whatDoesItDo)}</p>
+          </div>
+          <div class="response-field">
+            <label>What problem does it solve?</label>
+            <p>${escapeHtml(resp.problemItSolves)}</p>
+          </div>
+          <div class="response-field">
+            <label>Who is this for?</label>
+            <p>${escapeHtml(resp.whoIsItFor)}</p>
+          </div>
+          <div class="response-field">
+            <label>How do you use it?</label>
+            <p>${escapeHtml(resp.howToUse)}</p>
+          </div>
         </div>
         ${ratingButtons}
       </div>
@@ -224,7 +249,10 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
   
   const revisionId = currentRevision.id;
   const data = {
-    description: document.getElementById('description').value
+    whatDoesItDo: document.getElementById('whatDoesItDo').value,
+    problemItSolves: document.getElementById('problemItSolves').value,
+    whoIsItFor: document.getElementById('whoIsItFor').value,
+    howToUse: document.getElementById('howToUse').value
   };
   
   const res = await fetch(`/api/revisions/${revisionId}/responses`, {
@@ -234,8 +262,11 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
   });
   
   if (res.ok) {
-    // Clear form and reset steps
-    document.getElementById('response-form').reset();
+    // Clear form
+    document.getElementById('whatDoesItDo').value = '';
+    document.getElementById('problemItSolves').value = '';
+    document.getElementById('whoIsItFor').value = '';
+    document.getElementById('howToUse').value = '';
     document.querySelectorAll('#response-form .form-step').forEach((step, i) => {
       step.classList.toggle('active', i === 0);
     });

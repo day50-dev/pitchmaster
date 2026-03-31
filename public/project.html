@@ -27,10 +27,11 @@
     </section>
 
     <section id="revision-selector">
-      <h3>Revisions</h3>
+      <div class="revision-header">
+        <h3>Revisions</h3>
+        <a href="/edit" class="btn btn-secondary">+ Add Pitch</a>
+      </div>
       <div id="revision-tabs"></div>
-      
-      <button class="btn btn-secondary" onclick="toggleSection('add-revision-section')" style="margin-top: 0.75rem;">+ New Revision</button>
     </section>
 
     <section class="add-revision-section collapsed" id="add-revision-section">
@@ -80,6 +81,11 @@
           <h3>Description</h3>
           <div id="revision-description-text"></div>
         </div>
+        
+        <div class="revision-story hidden" id="revision-story-section">
+          <h3>Story</h3>
+          <div id="revision-story-text"></div>
+        </div>
       </div>
 
       <div class="audience-section collapsed" id="audience-section">
@@ -92,8 +98,20 @@
           
           <form id="response-form">
             <div class="form-group">
-              <label for="description">What is this product?</label>
-              <textarea id="description" name="description" rows="3" placeholder="After watching the video and reading the description, describe what you think this project is..."></textarea>
+              <label for="whatDoesItDo">What does this do?</label>
+              <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" placeholder="Describe what the project is..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="problemItSolves">What problem does it solve?</label>
+              <textarea id="problemItSolves" name="problemItSolves" rows="2" placeholder="What pain point does it address?"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="whoIsItFor">Who is this for?</label>
+              <textarea id="whoIsItFor" name="whoIsItFor" rows="2" placeholder="Who is the target audience?"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="howToUse">How do you use it?</label>
+              <textarea id="howToUse" name="howToUse" rows="2" placeholder="How would someone use this?"></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Submit</button>
           </form>

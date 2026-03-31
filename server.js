@@ -36,6 +36,7 @@ db.exec(`
     projectId INTEGER,
     revisionNumber INTEGER,
     description TEXT,
+    story TEXT,
     videoUrl TEXT,
     githubUrl TEXT,
     websiteUrl TEXT,
@@ -47,7 +48,10 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     revisionId INTEGER,
     userId INTEGER,
-    description TEXT,
+    whatDoesItDo TEXT,
+    problemItSolves TEXT,
+    whoIsItFor TEXT,
+    howToUse TEXT,
     isCorrect INTEGER DEFAULT NULL, -- NULL = not yet rated, 0 = incorrect, 1 = correct
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (revisionId) REFERENCES revisions(id),
@@ -175,6 +179,7 @@ app.get('/api/projects', (req, res) => {
   const projects = db.prepare(`
     SELECT p.*, 
            r.description as latestDescription,
+           r.story as latestStory,
            r.videoUrl as latestVideoUrl,
            r.githubUrl as latestGithubUrl,
            r.websiteUrl as latestWebsiteUrl,
@@ -232,7 +237,7 @@ app.get('/api/projects/:id', (req, res) => {
 // Create new project (or find existing by provenance) with first revision
 app.post('/api/projects', (req, res) => {
   const userId = 1; // Demo user
-  const { title, description, videoUrl, githubUrl, websiteUrl, provenanceUrl } = req.body;
+  const { title, description, story, videoUrl, githubUrl, websiteUrl, provenanceUrl } = req.body;
   
   if (!title || title.length > 200) {
     return res.status(400).json({ error: 'Title is required (max 200 chars)' });
@@ -258,9 +263,9 @@ app.post('/api/projects', (req, res) => {
       const newRevNum = (maxRev.max || 0) + 1;
       
       db.prepare(`
-        INSERT INTO revisions (projectId, revisionNumber, description, videoUrl, githubUrl, websiteUrl)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(projectId, newRevNum, description, videoUrl || '', githubUrl || '', websiteUrl || '');
+        INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
       
       return res.json({ id: projectId, revisionNumber: newRevNum, isNewRevision: true });
     }
@@ -275,9 +280,9 @@ app.post('/api/projects', (req, res) => {
   
   // Create first revision
   db.prepare(`
-    INSERT INTO revisions (projectId, revisionNumber, description, videoUrl, githubUrl, websiteUrl)
-    VALUES (?, 1, ?, ?, ?, ?)
-  `).run(projectId, description, videoUrl || '', githubUrl || '', websiteUrl || '');
+    INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
+    VALUES (?, 1, ?, ?, ?, ?, ?)
+  `).run(projectId, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
   
   res.json({ id: projectId, revisionNumber: 1, isNewProject: true });
 });
@@ -285,7 +290,7 @@ app.post('/api/projects', (req, res) => {
 // Add a new revision to an existing project
 app.post('/api/projects/:id/revisions', (req, res) => {
   const projectId = req.params.id;
-  const { description, videoUrl, githubUrl, websiteUrl } = req.body;
+  const { description, story, videoUrl, githubUrl, websiteUrl } = req.body;
   
   if (!description || description.length > 2000) {
     return res.status(400).json({ error: 'Description is required (max 2000 chars)' });
@@ -298,27 +303,27 @@ app.post('/api/projects/:id/revisions', (req, res) => {
   const newRevNum = (maxRev.max || 0) + 1;
   
   db.prepare(`
-    INSERT INTO revisions (projectId, revisionNumber, description, videoUrl, githubUrl, websiteUrl)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(projectId, newRevNum, description, videoUrl || '', githubUrl || '', websiteUrl || '');
+    INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
   
   res.json({ revisionNumber: newRevNum });
 });
 
-// Submit a response (audience describes what they think the product is)
+// Submit a response (audience answers the 4 decoding questions)
 app.post('/api/revisions/:id/responses', (req, res) => {
   const revisionId = req.params.id;
   const userId = 1; // Demo user
-  const { description } = req.body;
+  const { whatDoesItDo, problemItSolves, whoIsItFor, howToUse } = req.body;
   
-  if (!description || description.length > 1000) {
-    return res.status(400).json({ error: 'Description is required (max 1000 chars)' });
+  if (!whatDoesItDo || !problemItSolves || !whoIsItFor || !howToUse) {
+    return res.status(400).json({ error: 'All 4 questions must be answered' });
   }
   
   const result = db.prepare(`
-    INSERT INTO responses (revisionId, userId, description)
-    VALUES (?, ?, ?)
-  `).run(revisionId, userId, description);
+    INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse);
   
   res.json({ id: result.lastInsertRowid });
 });
@@ -396,6 +401,11 @@ app.post('/api/import/devpost/profile', async (req, res) => {
 // Serve project.html for /project/:id routes
 app.get('/project/:id', (req, res) => {
   res.sendFile(__dirname + '/public/project.html');
+});
+
+// Serve edit.html for /edit route
+app.get('/edit', (req, res) => {
+  res.sendFile(__dirname + '/public/edit.html');
 });
 
 const PORT = process.env.PORT || 3000;

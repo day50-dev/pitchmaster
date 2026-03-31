@@ -741,6 +741,27 @@ main {
   color: var(--text);
 }
 
+.revision-story {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.revision-story h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#revision-story-text {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: var(--text);
+}
+
 /* Collapsible Sections */
 .audience-section,
 .add-revision-section {
@@ -903,6 +924,67 @@ main {
 
 .btn-rate.incorrect:hover {
   background: #fecaca;
+}
+
+/* Edit Page / Pitch Form */
+#pitch-form-section {
+  max-width: 600px;
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+#preview-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+}
+
+#preview-section h3 {
+  margin-bottom: 0.5rem;
+}
+
+.preview-note {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.preview-content {
+  background: var(--bg);
+  padding: 1.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.preview-links {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.preview-description,
+.preview-story {
+  margin-top: 1rem;
+}
+
+.preview-description h4,
+.preview-story h4 {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Revision header inline */
+.revision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .rating-result {

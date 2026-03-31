@@ -38,7 +38,7 @@ The revision has a few things:
 Then there are audience. The audience isn't "judging" they are "decoding". They need to answer questions:
 
     What does this do?
-    Why is it valuable?
+    What problem does it solve?
     Who is this for?
     How do you use it?
 

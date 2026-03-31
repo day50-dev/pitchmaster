@@ -50,6 +50,7 @@ async function loadExistingProject() {
   if (project.revisions && project.revisions.length > 0) {
     const latest = project.revisions[0];
     document.getElementById('description').value = latest.description || '';
+    document.getElementById('story').value = latest.story || '';
     document.getElementById('videoUrl').value = latest.videoUrl || '';
     document.getElementById('githubUrl').value = latest.githubUrl || '';
     document.getElementById('websiteUrl').value = latest.websiteUrl || '';
@@ -80,7 +81,7 @@ async function loadExistingRevision() {
 }
 
 function setupPreview() {
-  const inputs = ['title', 'description', 'videoUrl', 'githubUrl', 'websiteUrl'];
+  const inputs = ['title', 'description', 'story', 'videoUrl', 'githubUrl', 'websiteUrl'];
   inputs.forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener('input', updatePreview);
@@ -93,6 +94,16 @@ function updatePreview() {
   
   const description = document.getElementById('description').value;
   document.getElementById('preview-description-text').textContent = description || 'No description yet...';
+  
+  const story = document.getElementById('story').value;
+  const storySection = document.getElementById('preview-story-section');
+  const storyText = document.getElementById('preview-story-text');
+  if (story) {
+    storyText.textContent = story;
+    storySection.classList.remove('hidden');
+  } else {
+    storySection.classList.add('hidden');
+  }
   
   const videoUrl = document.getElementById('videoUrl').value;
   const videoContainer = document.getElementById('video-preview-container');
@@ -140,6 +151,7 @@ document.getElementById('pitch-form').addEventListener('submit', async (e) => {
   const formData = {
     title: document.getElementById('title').value,
     description: document.getElementById('description').value,
+    story: document.getElementById('story').value,
     videoUrl: document.getElementById('videoUrl').value,
     githubUrl: document.getElementById('githubUrl').value,
     websiteUrl: document.getElementById('websiteUrl').value,
