@@ -20,7 +20,7 @@ This tool is for ANY project - hackathon projects AND open source GitHub project
 
 3. **Hacker reviews feedback** - The hacker who made the project sees these descriptions and thinks: "aha! I miscommunicated this" or "I did that wrong."
 
-4. **Rate the responses** - Hacker marks each description as "correct" (they understood correctly) or "incorrect" (they got the wrong idea).
+4. **Rate the attempted descriptions** - Hacker marks each description as "correct" (they understood correctly) or "incorrect" (they got the wrong idea).
 
 5. **Improve with revisions** - Hacker updates the pitch with a new revision. NEW people try again - hacker sees if communication accuracy improved.
 

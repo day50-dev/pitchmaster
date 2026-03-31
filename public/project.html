@@ -29,6 +29,42 @@
     <section id="revision-selector">
       <h3>Revisions</h3>
       <div id="revision-tabs"></div>
+      
+      <button class="btn btn-secondary" onclick="toggleSection('add-revision-section')" style="margin-top: 0.75rem;">+ New Revision</button>
+    </section>
+
+    <section class="add-revision-section collapsed" id="add-revision-section">
+      <div class="add-revision-content">
+        <form id="revision-form">
+          <div class="form-step active" data-step="1">
+            <div class="form-group">
+              <label for="rev-description">What's new?</label>
+              <textarea id="rev-description" name="description" rows="3" placeholder="Describe your updated pitch..."></textarea>
+            </div>
+            <button type="button" class="btn btn-primary next-step">Next</button>
+          </div>
+          
+          <div class="form-step" data-step="2">
+            <p class="step-hint">Add links (optional)</p>
+            <div class="form-group">
+              <label for="rev-video">Video</label>
+              <input type="url" id="rev-video" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+            </div>
+            <div class="form-group">
+              <label for="rev-github">GitHub</label>
+              <input type="url" id="rev-github" name="githubUrl" placeholder="https://github.com/...">
+            </div>
+            <div class="form-group">
+              <label for="rev-website">Website</label>
+              <input type="url" id="rev-website" name="websiteUrl" placeholder="https://...">
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary prev-step">Back</button>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </section>
 
     <section id="current-revision">
@@ -66,48 +102,10 @@
     </section>
 
     <section id="responses-section">
-      <h3>Audience Responses (<span id="response-count">0</span>)</h3>
+      <h3>Attempted Descriptions (<span id="response-count">0</span>)</h3>
       <div id="responses-list"></div>
     </section>
 
-    <section class="add-revision-section collapsed" id="add-revision-section">
-      <div class="add-revision-header" onclick="toggleSection('add-revision-section')">
-        <h3>✏️ Add Revision</h3>
-        <span class="toggle-icon">▼</span>
-      </div>
-      <div class="add-revision-content">
-        <form id="revision-form">
-          <div class="form-step active" data-step="1">
-            <div class="form-group">
-              <label for="rev-description">What's new?</label>
-              <textarea id="rev-description" name="description" rows="3" placeholder="Describe your updated pitch..."></textarea>
-            </div>
-            <button type="button" class="btn btn-primary next-step">Next</button>
-          </div>
-          
-          <div class="form-step" data-step="2">
-            <p class="step-hint">Add links (optional)</p>
-            <div class="form-group">
-              <label for="rev-video">Video</label>
-              <input type="url" id="rev-video" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
-            </div>
-            <div class="form-group">
-              <label for="rev-github">GitHub</label>
-              <input type="url" id="rev-github" name="githubUrl" placeholder="https://github.com/...">
-            </div>
-            <div class="form-group">
-              <label for="rev-website">Website</label>
-              <input type="url" id="rev-website" name="websiteUrl" placeholder="https://...">
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary prev-step">Back</button>
-              <button type="submit" class="btn btn-primary">Save</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </section>
-    
     <script>
       function toggleSection(id) {
         const section = document.getElementById(id);

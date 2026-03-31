@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Pitch - PitchTheHack</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1><a href="/">PitchTheHack</a></h1>
+      <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+      <div id="auth-section"></div>
+    </div>
+  </header>
+
+  <main id="project-main">
+    <a href="/" class="back-link">« Back to Projects</a>
+    
+    <section id="project-header">
+      <h2 id="page-title">Add New Pitch</h2>
+      <p class="page-subtitle">Fill in your pitch details. This is what people will see when they try to describe your project.</p>
+    </section>
+
+    <section id="pitch-form-section">
+      <form id="pitch-form">
+        <div class="form-group">
+          <label for="title">Project Title</label>
+          <input type="text" id="title" name="title" required placeholder="e.g., Nomi - Find the right tools">
+        </div>
+        
+        <div class="form-group">
+          <label for="description">Short Description</label>
+          <textarea id="description" name="description" rows="2" required placeholder="One sentence about what this project does..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="story">Full Story (optional)</label>
+          <textarea id="story" name="story" rows="4" placeholder="More detailed explanation of what the project is and does..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="videoUrl">YouTube Video URL (optional)</label>
+          <input type="url" id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+        </div>
+        
+        <div class="form-group">
+          <label for="githubUrl">GitHub URL (optional)</label>
+          <input type="url" id="githubUrl" name="githubUrl" placeholder="https://github.com/username/repo">
+        </div>
+        
+        <div class="form-group">
+          <label for="websiteUrl">Website URL (optional)</label>
+          <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://your-project.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="provenanceUrl">Original Project URL (optional - for tracking)</label>
+          <input type="url" id="provenanceUrl" name="provenanceUrl" placeholder="https://devpost.com/software/your-project">
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Save Pitch</button>
+        </div>
+      </form>
+    </section>
+    
+    <section id="preview-section">
+      <h3>Preview</h3>
+      <p class="preview-note">This is how your pitch will look to others:</p>
+      
+      <div class="preview-content">
+        <div id="video-preview-container" class="video-embed hidden"></div>
+        
+        <div class="preview-links">
+          <a id="preview-video-link" href="" target="_blank" class="project-link youtube hidden">Watch Video</a>
+          <a id="preview-github-link" href="" target="_blank" class="project-link github hidden">View Code</a>
+          <a id="preview-website-link" href="" target="_blank" class="project-link website hidden">Visit Site</a>
+        </div>
+        
+        <div class="preview-description">
+          <h4>Description</h4>
+          <div id="preview-description-text"></div>
+        </div>
+        
+        <div class="preview-story hidden" id="preview-story-section">
+          <h4>Story</h4>
+          <div id="preview-story-text"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/edit.js"></script>
+</body>
+</html>

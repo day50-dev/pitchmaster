@@ -138,7 +138,7 @@ function renderResponses() {
   document.getElementById('response-count').textContent = currentRevision ? currentRevision.responses.length : 0;
   
   if (!currentRevision || !currentRevision.responses || currentRevision.responses.length === 0) {
-    responsesList.innerHTML = '<p class="no-responses">No responses yet. Be the first to describe what you think this is!</p>';
+    responsesList.innerHTML = '<p class="no-responses">No descriptions yet. Be the first to describe what you think this is!</p>';
     return;
   }
   
