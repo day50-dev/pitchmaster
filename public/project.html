@@ -33,6 +33,7 @@
 
     <section id="current-revision">
       <div class="revision-content">
+        <div id="video-embed-container" class="video-embed hidden"></div>
         <div class="revision-links">
           <a id="revision-video" href="" target="_blank" class="project-link youtube">Watch Video</a>
           <a id="revision-github" href="" target="_blank" class="project-link github">View Code</a>
@@ -47,53 +48,18 @@
 
       <div class="audience-section collapsed" id="audience-section">
         <div class="audience-header" onclick="toggleSection('audience-section')">
-          <h3>🎯 Share Your Take</h3>
+          <h3>💬 Describe the Product</h3>
           <span class="toggle-icon">▼</span>
         </div>
         <div class="audience-content">
-          <p class="audience-pitch">Before viewing the pitch, try to answer these questions. Your first impression matters!</p>
+          <p class="audience-pitch">After viewing the pitch, describe what this project does. Practice communicating clearly!</p>
           
           <form id="response-form">
-            <div class="form-step active" data-step="1">
-              <div class="form-group">
-                <label for="whatDoesItDo">What does this do?</label>
-                <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" placeholder="Quick impressions first..."></textarea>
-              </div>
-              <button type="button" class="btn btn-primary next-step">Next</button>
+            <div class="form-group">
+              <label for="description">What is this product?</label>
+              <textarea id="description" name="description" rows="3" placeholder="After watching the video and reading the description, describe what you think this project is..."></textarea>
             </div>
-            
-            <div class="form-step" data-step="2">
-              <div class="form-group">
-                <label for="whyValuable">Why is it valuable?</label>
-                <textarea id="whyValuable" name="whyValuable" rows="2" placeholder="What problem does it solve?"></textarea>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary prev-step">Back</button>
-                <button type="button" class="btn btn-primary next-step">Next</button>
-              </div>
-            </div>
-            
-            <div class="form-step" data-step="3">
-              <div class="form-group">
-                <label for="whoIsItFor">Who is this for?</label>
-                <textarea id="whoIsItFor" name="whoIsItFor" rows="2" placeholder="Target audience?"></textarea>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary prev-step">Back</button>
-                <button type="button" class="btn btn-primary next-step">Next</button>
-              </div>
-            </div>
-            
-            <div class="form-step" data-step="4">
-              <div class="form-group">
-                <label for="howToUse">How do you use it?</label>
-                <textarea id="howToUse" name="howToUse" rows="2" placeholder="User flow?"></textarea>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary prev-step">Back</button>
-                <button type="submit" class="btn btn-primary">Submit</button>
-              </div>
-            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </form>
         </div>
       </div>

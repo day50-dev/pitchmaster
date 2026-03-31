@@ -47,10 +47,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     revisionId INTEGER,
     userId INTEGER,
-    whatDoesItDo TEXT,
-    whyValuable TEXT,
-    whoIsItFor TEXT,
-    howToUse TEXT,
+    description TEXT,
+    isCorrect INTEGER DEFAULT NULL, -- NULL = not yet rated, 0 = incorrect, 1 = correct
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (revisionId) REFERENCES revisions(id),
     FOREIGN KEY (userId) REFERENCES users(id)
@@ -100,32 +98,31 @@ function fetchUrl(url, timeout = 10000) {
 
 // Parse Devpost page to extract project data
 function parseDevpost(html, url) {
-  const result = { title: '', description: '', githubUrl: '', websiteUrl: '', videoUrl: '' };
+  const result = { 
+    title: '', 
+    description: '',     // short description from p class="large"
+    story: '',           // longer story from #app-details-left
+    githubUrl: '', 
+    websiteUrl: '', 
+    videoUrl: '' 
+  };
   
-  // Extract title from og:title or <title>
+  // Title
   const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || 
                      html.match(/<title>([^<]+)<\/title>/i);
   if (titleMatch) result.title = titleMatch[1].trim();
   
-  // Extract longer description from #app-details-left in the article
-  // This contains the full "Story" description
+  // Short description from p class="large"
+  const shortDescMatch = html.match(/<p[^>]*class="[^"]*large[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
+  result.description = shortDescMatch ? shortDescMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  
+  // Story from #app-details-left
   const appDetailsMatch = html.match(/<article[^>]*id="app-details"[\s\S]*?<\/article>/i);
   if (appDetailsMatch) {
-    // Get the first paragraph text (the longer description)
-    const descMatch = appDetailsMatch[0].match(/<div>[\s\S]*?<p>([\s\S]*?)<\/p>/i);
-    if (descMatch) {
-      const descText = descMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      if (descText.length > 20) {
-        result.description = descText;
-      }
+    const firstPMatch = appDetailsMatch[0].match(/<div>[\s\S]*?<p>([\s\S]*?)<\/p>/i);
+    if (firstPMatch) {
+      result.story = firstPMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     }
-  }
-  
-  // Fallback to og:description if longer description not found
-  if (!result.description) {
-    const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i) ||
-                      html.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
-    if (descMatch) result.description = descMatch[1].trim();
   }
   
   // Extract YouTube video from embed tag (iframe) - this is the embedded player
@@ -308,22 +305,35 @@ app.post('/api/projects/:id/revisions', (req, res) => {
   res.json({ revisionNumber: newRevNum });
 });
 
-// Submit a response (audience decoding)
+// Submit a response (audience describes what they think the product is)
 app.post('/api/revisions/:id/responses', (req, res) => {
   const revisionId = req.params.id;
   const userId = 1; // Demo user
-  const { whatDoesItDo, whyValuable, whoIsItFor, howToUse } = req.body;
+  const { description } = req.body;
   
-  if (!whatDoesItDo || !whyValuable || !whoIsItFor || !howToUse) {
-    return res.status(400).json({ error: 'All response fields are required' });
+  if (!description || description.length > 1000) {
+    return res.status(400).json({ error: 'Description is required (max 1000 chars)' });
   }
   
   const result = db.prepare(`
-    INSERT INTO responses (revisionId, userId, whatDoesItDo, whyValuable, whoIsItFor, howToUse)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(revisionId, userId, whatDoesItDo, whyValuable, whoIsItFor, howToUse);
+    INSERT INTO responses (revisionId, userId, description)
+    VALUES (?, ?, ?)
+  `).run(revisionId, userId, description);
   
   res.json({ id: result.lastInsertRowid });
+});
+
+// Rate a response (hacker marks it correct or incorrect)
+app.patch('/api/responses/:id/rate', (req, res) => {
+  const responseId = req.params.id;
+  const { isCorrect } = req.body;
+  
+  if (typeof isCorrect !== 'number' || (isCorrect !== 0 && isCorrect !== 1)) {
+    return res.status(400).json({ error: 'isCorrect must be 0 (incorrect) or 1 (correct)' });
+  }
+  
+  db.prepare('UPDATE responses SET isCorrect = ? WHERE id = ?').run(isCorrect, responseId);
+  res.json({ ok: true });
 });
 
 // Devpost importer endpoint - single project

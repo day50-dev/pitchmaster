@@ -86,15 +86,29 @@ function selectRevision(revision) {
     tab.classList.toggle('active', parseInt(tab.dataset.revisionId) === revision.id);
   });
   
-  // Update links
+  // Update video - embed YouTube
+  const videoContainer = document.getElementById('video-embed-container');
   const videoLink = document.getElementById('revision-video');
   const githubLink = document.getElementById('revision-github');
   const websiteLink = document.getElementById('revision-website');
   
   if (revision.videoUrl) {
-    videoLink.href = revision.videoUrl;
-    videoLink.classList.remove('hidden');
+    // Extract video ID and embed
+    const videoIdMatch = revision.videoUrl.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1];
+      videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+      videoContainer.classList.remove('hidden');
+      videoLink.classList.add('hidden'); // Hide link when embed is shown
+    } else {
+      videoContainer.classList.add('hidden');
+      videoContainer.innerHTML = '';
+      videoLink.href = revision.videoUrl;
+      videoLink.classList.remove('hidden');
+    }
   } else {
+    videoContainer.classList.add('hidden');
+    videoContainer.innerHTML = '';
     videoLink.classList.add('hidden');
   }
   
@@ -124,36 +138,36 @@ function renderResponses() {
   document.getElementById('response-count').textContent = currentRevision ? currentRevision.responses.length : 0;
   
   if (!currentRevision || !currentRevision.responses || currentRevision.responses.length === 0) {
-    responsesList.innerHTML = '<p class="no-responses">No responses yet. Be the first to decode!</p>';
+    responsesList.innerHTML = '<p class="no-responses">No responses yet. Be the first to describe what you think this is!</p>';
     return;
   }
   
-  responsesList.innerHTML = currentRevision.responses.map(resp => `
-    <div class="response-card">
-      <div class="response-author">
-        <img src="https://github.com/ghost.png" alt="${escapeHtml(resp.username)}">
-        <span>${escapeHtml(resp.displayName || resp.username)}</span>
+  responsesList.innerHTML = currentRevision.responses.map(resp => {
+    const isCorrect = resp.isCorrect;
+    const ratingButtons = isCorrect === null ? `
+      <div class="rating-buttons">
+        <button class="btn btn-rate correct" onclick="rateResponse(${resp.id}, 1)">✓ Correct</button>
+        <button class="btn btn-rate incorrect" onclick="rateResponse(${resp.id}, 0)">✗ Incorrect</button>
       </div>
-      <div class="response-fields">
-        <div class="response-field">
-          <label>What does it do?</label>
-          <p>${escapeHtml(resp.whatDoesItDo)}</p>
-        </div>
-        <div class="response-field">
-          <label>Why is it valuable?</label>
-          <p>${escapeHtml(resp.whyValuable)}</p>
-        </div>
-        <div class="response-field">
-          <label>Who is it for?</label>
-          <p>${escapeHtml(resp.whoIsItFor)}</p>
-        </div>
-        <div class="response-field">
-          <label>How to use</label>
-          <p>${escapeHtml(resp.howToUse)}</p>
-        </div>
+    ` : `
+      <div class="rating-result ${isCorrect ? 'correct' : 'incorrect'}">
+        ${isCorrect ? '✓ Marked as correct' : '✗ Marked as incorrect'}
       </div>
-    </div>
-  `).join('');
+    `;
+    
+    return `
+      <div class="response-card">
+        <div class="response-author">
+          <img src="https://github.com/ghost.png" alt="${escapeHtml(resp.username)}">
+          <span>${escapeHtml(resp.displayName || resp.username)}</span>
+        </div>
+        <div class="response-content">
+          <p>${escapeHtml(resp.description)}</p>
+        </div>
+        ${ratingButtons}
+      </div>
+    `;
+  }).join('');
 }
 
 // Form step navigation for progressive disclosure (project page)
@@ -210,10 +224,7 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
   
   const revisionId = currentRevision.id;
   const data = {
-    whatDoesItDo: document.getElementById('whatDoesItDo').value,
-    whyValuable: document.getElementById('whyValuable').value,
-    whoIsItFor: document.getElementById('whoIsItFor').value,
-    howToUse: document.getElementById('howToUse').value
+    description: document.getElementById('description').value
   };
   
   const res = await fetch(`/api/revisions/${revisionId}/responses`, {
@@ -295,6 +306,28 @@ document.getElementById('revision-form').addEventListener('submit', async (e) =>
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Rate a response (hacker marks it correct or incorrect)
+async function rateResponse(responseId, isCorrect) {
+  const res = await fetch(`/api/responses/${responseId}/rate`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isCorrect })
+  });
+  
+  if (res.ok) {
+    // Reload to show updated ratings
+    await loadProject();
+    if (currentRevision) {
+      const rev = project.revisions.find(r => r.id === currentRevision.id);
+      selectRevision(rev);
+      renderResponses();
+    }
+  } else {
+    const err = await res.json();
+    alert('Failed to rate: ' + (err.error || 'Unknown error'));
+  }
 }
 
 init();
