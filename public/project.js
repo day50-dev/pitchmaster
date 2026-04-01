@@ -9,22 +9,6 @@ let currentRevision = null;
 
 async function init() {
   await loadProject();
-  loadAuth();
-}
-
-async function loadAuth() {
-  const res = await fetch('/api/me');
-  const user = await res.json();
-  
-  const authSection = document.getElementById('auth-section');
-  if (user) {
-    authSection.innerHTML = `
-      <div class="user-info">
-        <img src="${user.avatarUrl || 'https://github.com/ghost.png'}" alt="${user.displayName}">
-        <span>${user.displayName || user.username}</span>
-      </div>
-    `;
-  }
 }
 
 async function loadProject() {
