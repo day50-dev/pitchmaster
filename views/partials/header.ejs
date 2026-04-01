@@ -1,40 +1,37 @@
-  <header>
+  <header class="py-3 border-bottom bg-white sticky-top">
     <div class="container">
-      <div class="header-content">
-        <a href="/" class="brand-logo">Pitch///asters</a>
-        <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
-        <form action="/search" method="GET" class="header-search">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <a href="/" class="brand-logo text-decoration-none">Pitch///asters</a>
+        <p class="tagline text-secondary mb-0 d-none d-md-block small">Re-pitch your hackathon projects. Get real feedback.</p>
+        <form action="/search" method="GET" class="header-search flex-grow-1" style="max-width: 400px;">
           <div class="input-group">
-            <input type="text" name="q" placeholder="Search projects, events, users..." class="search-input">
-            <button type="submit" class="btn btn-search" aria-label="Search">
+            <input type="text" name="q" placeholder="Search..." class="form-control border-end-0">
+            <button type="submit" class="btn btn-outline-secondary border-start-0" aria-label="Search">
               <span class="search-icon">🔍</span>
             </button>
           </div>
         </form>
-        <nav class="header-nav">
-          <a href="/notifications" class="nav-notification" id="nav-notifications">
-            <i class="bi bi-bell" id="notification-icon"></i>
-            <span class="notification-badge hidden" id="notification-badge">0</span>
+        <nav class="d-flex align-items-center gap-2 ms-auto">
+          <a href="/notifications" class="nav-notification position-relative" id="nav-notifications">
+            <i class="bi bi-bell fs-5"></i>
+            <span class="notification-badge hidden position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-badge">0</span>
           </a>
           <div class="user-dropdown" id="user-dropdown">
-            <button class="user-dropdown-toggle" id="user-dropdown-toggle">
-              <img src="https://github.com/ghost.png" alt="User" class="user-avatar-small" id="user-avatar-nav">
-              <span class="user-name" id="user-name-nav">User</span>
-              <span class="dropdown-arrow">▼</span>
+            <button class="user-dropdown-toggle d-flex align-items-center gap-2 border rounded p-1" id="user-dropdown-toggle">
+              <img src="https://github.com/ghost.png" alt="User" class="user-avatar-small rounded-circle" id="user-avatar-nav" width="32" height="32">
+              <span class="user-name d-none d-sm-block fw-medium" id="user-name-nav">User</span>
+              <span class="dropdown-arrow d-none d-sm-inline">▼</span>
             </button>
-            <div class="user-dropdown-menu hidden" id="user-dropdown-menu">
-              <a href="/profile" class="dropdown-item">
-                <span class="dropdown-icon">👤</span>
-                My Profile
+            <div class="user-dropdown-menu hidden position-absolute end-0 mt-2" id="user-dropdown-menu">
+              <a href="/profile" class="dropdown-item d-block px-3 py-2">
+                <span class="dropdown-icon">👤</span> My Profile
               </a>
-              <a href="/settings" class="dropdown-item">
-                <span class="dropdown-icon">⚙️</span>
-                Settings
+              <a href="/settings" class="dropdown-item d-block px-3 py-2">
+                <span class="dropdown-icon">⚙️</span> Settings
               </a>
-              <div class="dropdown-divider"></div>
-              <a href="#" class="dropdown-item" id="logout-btn">
-                <span class="dropdown-icon">🚪</span>
-                Logout
+              <div class="dropdown-divider my-1"></div>
+              <a href="#" class="dropdown-item d-block px-3 py-2" id="logout-btn">
+                <span class="dropdown-icon">🚪</span> Logout
               </a>
             </div>
           </div>
