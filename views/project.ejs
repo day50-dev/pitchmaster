@@ -119,6 +119,23 @@
 
           <form id="response-form">
             <div class="form-group">
+              <label for="feedbackReason">If you didn't finish...</label>
+              <select id="feedbackReason" name="feedbackReason">
+                <option value="">-- Select a reason --</option>
+                <option value="bored">Got bored / lost interest</option>
+                <option value="dont-care">Don't care about this problem</option>
+                <option value="too-difficult">Too difficult/complicated to understand</option>
+                <option value="hard-to-hear">Hard to hear/understand (audio/video issues)</option>
+                <option value="not-interesting">Not interesting to me</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" id="feedback-other-group" style="display: none;">
+              <label for="feedbackOther">Please specify</label>
+              <input type="text" id="feedbackOther" name="feedbackOther" placeholder="What was the issue?">
+            </div>
+
+            <div class="form-group">
               <label for="whatDoesItDo">What does this do?</label>
               <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" placeholder="Describe what the project is..."></textarea>
             </div>
@@ -135,26 +152,6 @@
               <textarea id="howToUse" name="howToUse" rows="2" placeholder="How would someone use this?"></textarea>
             </div>
             
-            <div class="form-divider">
-              <span>or</span>
-            </div>
-            
-            <div class="form-group">
-              <label for="feedbackReason">Couldn't complete? Tell us why (optional)</label>
-              <select id="feedbackReason" name="feedbackReason">
-                <option value="">-- Select a reason --</option>
-                <option value="bored">Got bored / lost interest</option>
-                <option value="dont-care">Don't care about this problem</option>
-                <option value="too-difficult">Too difficult/complicated to understand</option>
-                <option value="hard-to-hear">Hard to hear/understand (audio/video issues)</option>
-                <option value="not-interesting">Not interesting to me</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="form-group" id="feedback-other-group" style="display: none;">
-              <label for="feedbackOther">Please specify</label>
-              <input type="text" id="feedbackOther" name="feedbackOther" placeholder="What was the issue?">
-            </div>
             
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Submit</button>
