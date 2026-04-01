@@ -164,7 +164,7 @@ function parseDevpost(html, url) {
     // Get children and find the story div (the one after gallery, before built-with)
     const children = appDetailsLeft.children();
     let storyDiv = null;
-    
+
     for (let i = 0; i < children.length; i++) {
       const $child = $(children[i]);
       // Skip gallery, find the div before built-with
@@ -175,26 +175,26 @@ function parseDevpost(html, url) {
         break;
       }
     }
-    
+
     if (storyDiv && storyDiv.length > 0) {
       const storyParts = [];
-      
+
       // Check if there are h2 headings (structured content)
       const headings = storyDiv.find('h2');
       if (headings.length > 0) {
         // Get all h2 headings and their following paragraphs
         headings.each((_, el) => {
           const $el = $(el);
-          const headingText = $el.text().trim();
-          if (headingText) storyParts.push(headingText);
-          
+          const headingHtml = $el.html().trim();
+          if (headingHtml) storyParts.push(`<h2>${headingHtml}</h2>`);
+
           // Get paragraphs after this heading until next h2
           let $next = $el.next();
           while ($next.length > 0 && !$next.is('h2')) {
             if ($next.is('p')) {
-              const text = $next.text().trim();
-              if (text && text.length > 10) {
-                storyParts.push(text);
+              const paraHtml = $next.html().trim();
+              if (paraHtml && paraHtml.length > 10) {
+                storyParts.push(`<p>${paraHtml}</p>`);
               }
             }
             $next = $next.next();
@@ -203,13 +203,13 @@ function parseDevpost(html, url) {
       } else {
         // No headings - just get all paragraphs
         storyDiv.find('p').each((_, el) => {
-          const text = $(el).text().trim();
-          if (text && text.length > 10) {
-            storyParts.push(text);
+          const paraHtml = $(el).html().trim();
+          if (paraHtml && paraHtml.length > 10) {
+            storyParts.push(`<p>${paraHtml}</p>`);
           }
         });
       }
-      
+
       if (storyParts.length > 0) {
         result.story = storyParts.join('\n\n');
       }
@@ -409,11 +409,11 @@ app.post('/api/projects', async (req, res) => {
       `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
       
       // If pitch creator answered the 4 questions, create a self-response
-      if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
+      if (pitchAnswers.pitchWhatDoesItDo || pitchAnswers.pitchProblemItSolves || pitchAnswers.pitchWhoIsItFor || pitchAnswers.pitchHowToUse) {
         db.prepare(`
           INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
           VALUES (?, ?, ?, ?, ?, ?)
-        `).run(revResult.lastInsertRowid, userId, pitchAnswers.whatDoesItDo || '', pitchAnswers.problemItSolves || '', pitchAnswers.whoIsItFor || '', pitchAnswers.howToUse || '');
+        `).run(revResult.lastInsertRowid, userId, pitchAnswers.pitchWhatDoesItDo || '', pitchAnswers.pitchProblemItSolves || '', pitchAnswers.pitchWhoIsItFor || '', pitchAnswers.pitchHowToUse || '');
       }
       
       return res.json({ id: projectId, revisionNumber: newRevNum, isNewRevision: true });
@@ -442,15 +442,15 @@ app.post('/api/projects', async (req, res) => {
     INSERT INTO revisions (projectId, revisionNumber, description, story, imageUrl, videoUrl, githubUrl, websiteUrl)
     VALUES (?, 1, ?, ?, ?, ?, ?, ?)
   `).run(projectId, description, story || '', finalImageUrl, videoUrl || '', githubUrl || '', websiteUrl || '');
-  
+
   // If pitch creator answered the 4 questions, create a self-response
-  if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
+  if (pitchAnswers.pitchWhatDoesItDo || pitchAnswers.pitchProblemItSolves || pitchAnswers.pitchWhoIsItFor || pitchAnswers.pitchHowToUse) {
     db.prepare(`
       INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(revResult.lastInsertRowid, userId, pitchAnswers.whatDoesItDo || '', pitchAnswers.problemItSolves || '', pitchAnswers.whoIsItFor || '', pitchAnswers.howToUse || '');
+    `).run(revResult.lastInsertRowid, userId, pitchAnswers.pitchWhatDoesItDo || '', pitchAnswers.pitchProblemItSolves || '', pitchAnswers.pitchWhoIsItFor || '', pitchAnswers.pitchHowToUse || '');
   }
-  
+
   res.json({ id: projectId, revisionNumber: 1, isNewProject: true });
 });
 
@@ -474,15 +474,15 @@ app.post('/api/projects/:id/revisions', (req, res) => {
     INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
-  
+
   // If pitch creator answered the 4 questions, create a self-response
-  if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
+  if (pitchAnswers.pitchWhatDoesItDo || pitchAnswers.pitchProblemItSolves || pitchAnswers.pitchWhoIsItFor || pitchAnswers.pitchHowToUse) {
     db.prepare(`
       INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(revResult.lastInsertRowid, userId, pitchAnswers.whatDoesItDo || '', pitchAnswers.problemItSolves || '', pitchAnswers.whoIsItFor || '', pitchAnswers.howToUse || '');
+    `).run(revResult.lastInsertRowid, userId, pitchAnswers.pitchWhatDoesItDo || '', pitchAnswers.pitchProblemItSolves || '', pitchAnswers.pitchWhoIsItFor || '', pitchAnswers.pitchHowToUse || '');
   }
-  
+
   res.json({ revisionNumber: newRevNum });
 });
 

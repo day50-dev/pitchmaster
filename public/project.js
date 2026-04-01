@@ -132,12 +132,11 @@ function selectRevision(revision) {
   const descriptionText = escapeHtml(revision.description || '');
   document.getElementById('revision-description-text').innerHTML = descriptionText.replace(/\n\n/g, '</p><p class="mb-3">').replace(/\n/g, '<br>');
 
-  // Update story
+  // Update story - already contains HTML from server
   const storySection = document.getElementById('revision-story-section');
   const storyText = document.getElementById('revision-story-text');
   if (revision.story) {
-    const formattedStory = escapeHtml(revision.story).replace(/\n\n/g, '</p><p class="mb-3">').replace(/\n/g, '<br>');
-    storyText.innerHTML = `<p class="mb-3">${formattedStory}</p>`;
+    storyText.innerHTML = revision.story;
     storySection.classList.remove('hidden');
   } else {
     storySection.classList.add('hidden');
@@ -149,9 +148,23 @@ function selectRevision(revision) {
 
 function renderResponses() {
   const responsesList = document.getElementById('responses-list');
-  document.getElementById('response-count').textContent = currentRevision ? currentRevision.responses.length : 0;
   
-  if (!currentRevision || !currentRevision.responses || currentRevision.responses.length === 0) {
+  if (!currentRevision || !currentRevision.responses) {
+    responsesList.innerHTML = '<p class="no-responses">No descriptions yet. Be the first to describe what you think this is!</p>';
+    document.getElementById('response-count').textContent = '0';
+    return;
+  }
+
+  // Filter out the pitcher's self-response (hidden from everyone)
+  // The self-response is used as ground truth for rating but not displayed
+  const audienceResponses = currentRevision.responses.filter(resp => {
+    // Assuming pitcher is userId 1 (demo user) - their response is the self-response
+    return resp.userId !== 1;
+  });
+
+  document.getElementById('response-count').textContent = audienceResponses.length;
+
+  if (audienceResponses.length === 0) {
     responsesList.innerHTML = '<p class="no-responses">No descriptions yet. Be the first to describe what you think this is!</p>';
     return;
   }
@@ -163,8 +176,8 @@ function renderResponses() {
     'whoIsItFor': 'isCorrectWhoIsFor',
     'howToUse': 'isCorrectHowToUse'
   };
-  
-  responsesList.innerHTML = currentRevision.responses.map(resp => {
+
+  responsesList.innerHTML = audienceResponses.map(resp => {
     // Generate rating buttons for each field (only if the field has content)
     const renderRatingButtons = (fieldName, label, value) => {
       if (!value) return '';
@@ -230,54 +243,6 @@ function renderResponses() {
   }).join('');
 }
 
-// Form step navigation for progressive disclosure (project page)
-document.querySelectorAll('#response-form, #revision-form').forEach(form => {
-  form.addEventListener('click', (e) => {
-    if (e.target.classList.contains('next-step')) {
-      const currentStep = form.querySelector('.form-step.active');
-      const nextStep = currentStep.nextElementSibling;
-      if (nextStep && nextStep.classList.contains('form-step')) {
-        currentStep.classList.remove('active');
-        nextStep.classList.add('active');
-      }
-    } else if (e.target.classList.contains('prev-step')) {
-      const currentStep = form.querySelector('.form-step.active');
-      const prevStep = currentStep.previousElementSibling;
-      if (prevStep && prevStep.classList.contains('form-step')) {
-        currentStep.classList.remove('active');
-        prevStep.classList.add('active');
-      }
-    }
-  });
-});
-
-// Reset form steps when section collapses
-document.getElementById('audience-section').addEventListener('click', (e) => {
-  if (e.target.classList.contains('toggle-icon') || e.target.closest('.audience-header')) {
-    setTimeout(() => {
-      const section = document.getElementById('audience-section');
-      if (section.classList.contains('collapsed')) {
-        section.querySelectorAll('.form-step').forEach((step, i) => {
-          step.classList.toggle('active', i === 0);
-        });
-      }
-    }, 300);
-  }
-});
-
-document.getElementById('add-revision-section').addEventListener('click', (e) => {
-  if (e.target.classList.contains('toggle-icon') || e.target.closest('.add-revision-header')) {
-    setTimeout(() => {
-      const section = document.getElementById('add-revision-section');
-      if (section.classList.contains('collapsed')) {
-        section.querySelectorAll('.form-step').forEach((step, i) => {
-          step.classList.toggle('active', i === 0);
-        });
-      }
-    }, 300);
-  }
-});
-
 // Response form handler
 document.getElementById('response-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -302,11 +267,6 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
     document.getElementById('problemItSolves').value = '';
     document.getElementById('whoIsItFor').value = '';
     document.getElementById('howToUse').value = '';
-    document.querySelectorAll('#response-form .form-step').forEach((step, i) => {
-      step.classList.toggle('active', i === 0);
-    });
-    // Collapse the section
-    document.getElementById('audience-section').classList.add('collapsed');
     // Reload project to get updated responses
     await loadProject();
     // Re-select current revision and render responses
@@ -321,46 +281,26 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
   }
 });
 
-// Reset form steps after submission and close
-async function resetFormSteps() {
-  // Collapse sections and reset forms
-  const audienceSection = document.getElementById('audience-section');
-  const revisionSection = document.getElementById('add-revision-section');
-  
-  audienceSection.classList.add('collapsed');
-  revisionSection.classList.add('collapsed');
-  
-  // Reset step positions
-  audienceSection.querySelectorAll('.form-step').forEach((step, i) => {
-    step.classList.toggle('active', i === 0);
-  });
-  revisionSection.querySelectorAll('.form-step').forEach((step, i) => {
-    step.classList.toggle('active', i === 0);
-  });
-}
-
 // Add revision form handler
 document.getElementById('revision-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   const data = {
     description: document.getElementById('rev-description').value,
     videoUrl: document.getElementById('rev-video').value,
     githubUrl: document.getElementById('rev-github').value,
     websiteUrl: document.getElementById('rev-website').value
   };
-  
+
   const res = await fetch(`/api/projects/${projectId}/revisions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  
+
   if (res.ok) {
-    const result = await res.json();
-    // Reset form and collapse section
+    // Reset form
     document.getElementById('revision-form').reset();
-    await resetFormSteps();
     // Reload project
     await loadProject();
   } else {
