@@ -500,23 +500,32 @@ function renderHackathons(hackathons) {
 }
 
 // Hackathon modal handlers - use Bootstrap Modal API
-addHackathonBtn?.addEventListener('click', () => new bootstrap.Modal(hackathonModal).show());
-hackathonModal.addEventListener('hidden.bs.modal', () => hackathonForm.reset());
+let hackathonModalInstance = null;
+addHackathonBtn?.addEventListener('click', () => {
+  hackathonModalInstance = new bootstrap.Modal(hackathonModal);
+  hackathonModalInstance.show();
+});
+hackathonModal.addEventListener('hidden.bs.modal', () => {
+  hackathonForm.reset();
+  hackathonModalInstance = null;
+});
 
 hackathonForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const url = document.getElementById('hackathon-url').value;
-  
+
   try {
     const res = await fetch('/api/hackathons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
     });
-    
+
     if (res.ok) {
       hackathonForm.reset();
-      hackathonModal.classList.add('hidden');
+      if (hackathonModalInstance) {
+        hackathonModalInstance.hide();
+      }
       loadHackathons();
     } else {
       const err = await res.json();
@@ -529,6 +538,7 @@ hackathonForm.addEventListener('submit', async (e) => {
 
 // Meetup modal
 let currentHackathonId = null;
+let meetupModalInstance = null;
 const meetupModal = document.getElementById('meetup-modal');
 const closeMeetup = document.getElementById('close-meetup');
 const meetupForm = document.getElementById('meetup-form');
@@ -537,12 +547,16 @@ const meetupsList = document.getElementById('meetups-list');
 hackathonsList.addEventListener('click', async (e) => {
   if (e.target.classList.contains('btn-meetup')) {
     currentHackathonId = e.target.dataset.id;
-    new bootstrap.Modal(meetupModal).show();
+    meetupModalInstance = new bootstrap.Modal(meetupModal);
+    meetupModalInstance.show();
     loadMeetups(currentHackathonId);
   }
 });
 
-meetupModal.addEventListener('hidden.bs.modal', () => meetupForm.reset());
+meetupModal.addEventListener('hidden.bs.modal', () => {
+  meetupForm.reset();
+  meetupModalInstance = null;
+});
 
 async function loadMeetups(hackathonId) {
   const res = await fetch(`/api/hackathons/${hackathonId}/meetups`);

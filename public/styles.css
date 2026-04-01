@@ -755,6 +755,21 @@ section h2 {
   margin-top: 0;
 }
 
+#revision-story-text p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+#revision-story-text ul,
+#revision-story-text ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+#revision-story-text li {
+  margin-bottom: 0.5rem;
+}
+
 #revision-story-text {
   color: var(--bs-body-color);
   line-height: 1.8;
@@ -1300,6 +1315,11 @@ section h2 {
   background: var(--bs-light);
   padding: 0.75rem;
   border-radius: var(--bs-border-radius-sm);
+}
+
+.response-field.feedback-field {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
 }
 
 .response-field label {

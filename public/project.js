@@ -35,14 +35,25 @@ async function loadProject() {
   }
   
   project = await res.json();
-  
+
   // Update header
   document.getElementById('project-title').textContent = project.title;
   document.getElementById('project-author').innerHTML = `by <a href="/profile/${project.userId}">${project.displayName || project.username}</a>`;
   if (project.provenanceUrl) {
     document.getElementById('project-provenance').textContent = `from ${project.provenanceUrl}`;
   }
+
+  // Update Open Graph meta tags
+  const imageUrl = project.revisions?.[0]?.imageUrl || 'https://pitchmasters.club/og-image.png';
+  const description = project.revisions?.[0]?.description || 'Re-pitch your hackathon projects. Get real feedback.';
+  const currentUrl = window.location.href;
   
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', `${project.title} - Pitch///asters`);
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+  document.querySelector('meta[property="og:image"]')?.setAttribute('content', imageUrl);
+  document.querySelector('meta[property="og:url"]')?.setAttribute('content', currentUrl);
+  document.querySelector('title').textContent = `${project.title} - Pitch///asters`;
+
   // Show revision tabs
   renderRevisionTabs();
   
@@ -127,21 +138,21 @@ function selectRevision(revision) {
   } else {
     websiteLink.classList.add('hidden');
   }
-  
+
   // Update description
   const descriptionText = escapeHtml(revision.description || '');
   document.getElementById('revision-description-text').innerHTML = descriptionText.replace(/\n\n/g, '</p><p class="mb-3">').replace(/\n/g, '<br>');
 
-  // Update story - already contains HTML from server
+  // Update story - render markdown as HTML
   const storySection = document.getElementById('revision-story-section');
   const storyText = document.getElementById('revision-story-text');
   if (revision.story) {
-    storyText.innerHTML = revision.story;
+    storyText.innerHTML = marked.parse(revision.story);
     storySection.classList.remove('hidden');
   } else {
     storySection.classList.add('hidden');
   }
-  
+
   // Update form action
   document.getElementById('response-form').dataset.revisionId = revision.id;
 }
@@ -219,13 +230,28 @@ function renderResponses() {
     if (resp.howToUse) {
       fieldsHtml += `<div class="response-field"><label>How do you use it?</label><p>${escapeHtml(resp.howToUse)}</p></div>`;
     }
-    
-    const ratingsHtml = 
-      renderRatingButtons('whatDoesItDo', 'What does this do?', resp.whatDoesItDo) +
-      renderRatingButtons('problemItSolves', 'Problem it solves?', resp.problemItSolves) +
-      renderRatingButtons('whoIsItFor', 'Who is this for?', resp.whoIsItFor) +
-      renderRatingButtons('howToUse', 'How do you use it?', resp.howToUse);
-    
+
+    // Show feedback reason if provided (no answers)
+    if (resp.feedbackReason) {
+      const reasonLabels = {
+        'bored': 'Got bored / lost interest',
+        'dont-care': "Don't care about this problem",
+        'too-difficult': 'Too difficult/complicated to understand',
+        'hard-to-hear': 'Hard to hear/understand (audio/video issues)',
+        'not-interesting': 'Not interesting to me',
+        'other': resp.feedbackOther || 'Other'
+      };
+      fieldsHtml = `<div class="response-field feedback-field"><label>⚠️ Feedback</label><p>${escapeHtml(reasonLabels[resp.feedbackReason] || resp.feedbackReason)}</p></div>`;
+    }
+
+    const ratingsHtml =
+      resp.feedbackReason ? '' : (
+        renderRatingButtons('whatDoesItDo', 'What does this do?', resp.whatDoesItDo) +
+        renderRatingButtons('problemItSolves', 'Problem it solves?', resp.problemItSolves) +
+        renderRatingButtons('whoIsItFor', 'Who is this for?', resp.whoIsItFor) +
+        renderRatingButtons('howToUse', 'How do you use it?', resp.howToUse)
+      );
+
     return `
       <div class="response-card">
         <div class="response-author">
@@ -252,21 +278,26 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
     whatDoesItDo: document.getElementById('whatDoesItDo').value,
     problemItSolves: document.getElementById('problemItSolves').value,
     whoIsItFor: document.getElementById('whoIsItFor').value,
-    howToUse: document.getElementById('howToUse').value
+    howToUse: document.getElementById('howToUse').value,
+    feedbackReason: document.getElementById('feedbackReason').value,
+    feedbackOther: document.getElementById('feedbackOther').value
   };
-  
+
   const res = await fetch(`/api/revisions/${revisionId}/responses`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  
+
   if (res.ok) {
     // Clear form
     document.getElementById('whatDoesItDo').value = '';
     document.getElementById('problemItSolves').value = '';
     document.getElementById('whoIsItFor').value = '';
     document.getElementById('howToUse').value = '';
+    document.getElementById('feedbackReason').value = '';
+    document.getElementById('feedbackOther').value = '';
+    document.getElementById('feedback-other-group').style.display = 'none';
     // Reload project to get updated responses
     await loadProject();
     // Re-select current revision and render responses

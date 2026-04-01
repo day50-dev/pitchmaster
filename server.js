@@ -7,9 +7,18 @@ const Database = require('better-sqlite3');
 const https = require('https');
 const http = require('http');
 const cheerio = require('cheerio');
+const { marked } = require('marked');
 
 const app = express();
 const db = new Database('pitchthehack.db');
+
+// Add feedback columns to existing responses table (migration)
+try {
+  db.exec('ALTER TABLE responses ADD COLUMN feedbackReason TEXT');
+} catch (e) { /* Column may already exist */ }
+try {
+  db.exec('ALTER TABLE responses ADD COLUMN feedbackOther TEXT');
+} catch (e) { /* Column may already exist */ }
 
 // Updated schema: projects have revisions, provenance URL for uniqueness
 db.exec(`
@@ -187,16 +196,16 @@ function parseDevpost(html, url) {
         // Get all h2 headings and their following paragraphs
         headings.each((_, el) => {
           const $el = $(el);
-          const headingHtml = $el.html().trim();
-          if (headingHtml) storyParts.push(`<h2>${headingHtml}</h2>`);
+          const headingText = $el.text().trim();
+          if (headingText) storyParts.push(`## ${headingText}`);
 
           // Get paragraphs after this heading until next h2
           let $next = $el.next();
           while ($next.length > 0 && !$next.is('h2')) {
             if ($next.is('p')) {
-              const paraHtml = $next.html().trim();
-              if (paraHtml && paraHtml.length > 10) {
-                storyParts.push(`<p>${paraHtml}</p>`);
+              const paraText = $next.text().trim();
+              if (paraText && paraText.length > 10) {
+                storyParts.push(paraText);
               }
             }
             $next = $next.next();
@@ -205,9 +214,9 @@ function parseDevpost(html, url) {
       } else {
         // No headings - just get all paragraphs
         storyDiv.find('p').each((_, el) => {
-          const paraHtml = $(el).html().trim();
-          if (paraHtml && paraHtml.length > 10) {
-            storyParts.push(`<p>${paraHtml}</p>`);
+          const paraText = $(el).text().trim();
+          if (paraText && paraText.length > 10) {
+            storyParts.push(paraText);
           }
         });
       }
@@ -739,6 +748,36 @@ app.get('/api/hackathons/:id/meetups', (req, res) => {
     ORDER BY m.createdAt DESC
   `).all(hackathonId);
   res.json(meetups);
+});
+
+// Get a single hackathon with attendee count
+app.get('/api/hackathons/:id', (req, res) => {
+  const hackathonId = req.params.id;
+  const hackathon = db.prepare(`
+    SELECT h.*,
+           (SELECT COUNT(*) FROM hackathon_attendees WHERE hackathonId = h.id) as attendeeCount
+    FROM hackathons h
+    WHERE h.id = ?
+  `).get(hackathonId);
+  
+  if (!hackathon) {
+    return res.status(404).json({ error: 'Hackathon not found' });
+  }
+  
+  res.json(hackathon);
+});
+
+// Get attendees for a hackathon
+app.get('/api/hackathons/:id/attendees', (req, res) => {
+  const hackathonId = req.params.id;
+  const attendees = db.prepare(`
+    SELECT u.id, u.username, u.displayName, u.avatarUrl, a.createdAt
+    FROM hackathon_attendees a
+    JOIN users u ON a.userId = u.id
+    WHERE a.hackathonId = ?
+    ORDER BY a.createdAt DESC
+  `).all(hackathonId);
+  res.json(attendees);
 });
 
 // Serve project.html for /project/:id routes
