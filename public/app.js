@@ -117,13 +117,17 @@ async function logout() {
   renderAuth();
 }
 
-async function loadProjects() {
-  const res = await fetch('/api/projects');
-  const projects = await res.json();
-  renderProjects(projects);
+let currentPage = 1;
+const projectsPerPage = 15;
+
+async function loadProjects(page = 1) {
+  currentPage = page;
+  const res = await fetch(`/api/projects?page=${page}&limit=${projectsPerPage}`);
+  const data = await res.json();
+  renderProjects(data.projects, data.pagination);
 }
 
-function renderProjects(projects) {
+function renderProjects(projects, pagination) {
   if (projects.length === 0) {
     projectsList.innerHTML = `
       <div class="text-center py-5">
@@ -137,8 +141,7 @@ function renderProjects(projects) {
     return;
   }
 
-  // Use Bootstrap grid with wider columns for larger cards
-  projectsList.innerHTML = '<div class="row g-4">' + projects.map(p => {
+  let html = '<div class="row g-4">' + projects.map(p => {
     const imageUrl = p.latestImageUrl || 'https://placehold.co/600x400?text=No+Image';
     return `
       <div class="col-12 col-md-6 col-lg-6 col-xl-4">
@@ -159,6 +162,45 @@ function renderProjects(projects) {
       </div>
     `;
   }).join('') + '</div>';
+
+  // Add pagination
+  if (pagination.totalPages > 1) {
+    html += `
+      <nav class="pagination-nav mt-4" aria-label="Project pagination">
+        <ul class="pagination justify-content-center">
+          <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${pagination.page - 1}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          ${Array.from({ length: pagination.totalPages }, (_, i) => `
+            <li class="page-item ${pagination.page === i + 1 ? 'active' : ''}">
+              <a class="page-link" href="#" data-page="${i + 1}">${i + 1}</a>
+            </li>
+          `).join('')}
+          <li class="page-item ${pagination.page === pagination.totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${pagination.page + 1}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    `;
+  }
+
+  projectsList.innerHTML = html;
+
+  // Add pagination click handlers
+  projectsList.querySelectorAll('.page-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = parseInt(e.target.dataset.page);
+      if (page && page !== currentPage) {
+        loadProjects(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  });
 }
 
 function escapeHtml(str) {

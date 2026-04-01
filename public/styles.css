@@ -2346,6 +2346,43 @@ section h2 {
   margin: 0;
 }
 
+/* Pagination */
+.pagination-nav {
+  margin-top: 2rem;
+}
+
+.pagination {
+  gap: 0.25rem;
+}
+
+.page-link {
+  color: var(--bs-primary);
+  background: white;
+  border: 1px solid var(--bs-border-color);
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--bs-border-radius-sm);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.page-link:hover {
+  background: var(--bs-light);
+  text-decoration: none;
+  color: var(--bs-primary);
+}
+
+.page-item.active .page-link {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: white;
+}
+
+.page-item.disabled .page-link {
+  color: var(--bs-secondary);
+  pointer-events: none;
+  background: var(--bs-light);
+}
+
 /* Footer */
 .site-footer {
   background: white;

@@ -14,6 +14,7 @@ const app = express();
 // Configure EJS template engine
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
+app.set('view cache', false); // Disable cache in development
 const db = new Database('pitchthehack.db');
 
 // Add feedback, videoDuration, and role columns to existing tables (migration)
@@ -429,6 +430,18 @@ app.get('/api/users/:id/projects', (req, res) => {
 // Get all projects for user (with latest revision info)
 app.get('/api/projects', (req, res) => {
   const userId = 1; // Demo user
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 15;
+  const offset = (page - 1) * limit;
+
+  // Get total count
+  const totalResult = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM projects p
+    JOIN users u ON p.userId = u.id
+    WHERE p.userId = ? AND u.role NOT IN ('ghosted', 'banned')
+  `).get(userId);
+
   const projects = db.prepare(`
     SELECT p.*,
            r.description as latestDescription,
@@ -448,8 +461,18 @@ app.get('/api/projects', (req, res) => {
     )
     WHERE p.userId = ? AND u.role NOT IN ('ghosted', 'banned')
     ORDER BY p.createdAt DESC
-  `).all(userId);
-  res.json(projects);
+    LIMIT ? OFFSET ?
+  `).all(userId, limit, offset);
+
+  res.json({
+    projects,
+    pagination: {
+      page,
+      limit,
+      total: totalResult.count,
+      totalPages: Math.ceil(totalResult.count / limit)
+    }
+  });
 });
 
 // Get a single project with all revisions and responses
