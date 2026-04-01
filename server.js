@@ -1021,6 +1021,11 @@ app.patch('/api/admin/users/:id/role', (req, res) => {
   res.json({ ok: true });
 });
 
+// Serve index.html for homepage
+app.get('/', (req, res) => {
+  res.render('index');
+});
+
 // Serve project.html for /project/:id routes
 app.get('/project/:id', (req, res) => {
   res.render('project');
@@ -1090,6 +1095,16 @@ app.get('/project/:id/revision/:rev', (req, res) => {
 
 app.get('/project/:id', (req, res) => {
   res.render('project');
+});
+
+// Serve privacy.ejs for /privacy route
+app.get('/privacy', (req, res) => {
+  res.render('privacy');
+});
+
+// Serve terms.ejs for /terms route
+app.get('/terms', (req, res) => {
+  res.render('terms');
 });
 
 const PORT = process.env.PORT || 3000;

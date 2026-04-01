@@ -9,13 +9,12 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Pitch///asters">
   <meta property="og:title" content="Import Project - Pitch///asters">
-  <meta property="og:description" content="Import a project from Devpost.">
+  <meta property="og:description" content="Import your project from Devpost or enter details manually.">
   <meta property="og:image" content="https://pitchmasters.club/og-image.png">
   <meta property="og:url" content="https://pitchmasters.club/import">
   <meta name="twitter:card" content="summary_large_image">
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap" rel="stylesheet">
@@ -23,109 +22,84 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-  <%- include('./partials/header') %>
+  <%- include("./partials/header") %>
 
   <main id="project-main">
     <a href="/" class="back-link">← Back to Projects</a>
 
     <section id="project-header">
-      <h2 id="page-title">Import from Devpost</h2>
-      <p class="page-subtitle">Paste a Devpost project URL or username to import. We'll automatically detect if it's a single project or a user's portfolio.</p>
+      <h2 id="page-title">Import a Project</h2>
+      <p class="page-subtitle">Import a project from Devpost or enter details manually to practice pitching it.</p>
     </section>
 
     <section id="import-section">
-      <div class="import-method">
-        <form id="import-form">
+      <div class="import-method" id="devpost-import">
+        <h3>Import from Devpost</h3>
+        <p class="method-description">Paste your Devpost project URL to automatically import the details.</p>
+        <form id="devpost-form">
           <div class="form-group">
-            <label for="devpost-input">Devpost URL or Username</label>
-            <input type="text" id="devpost-input" name="devpostInput" required placeholder="e.g., https://devpost.com/software/my-project or username">
-            <small class="form-hint">Accepts project URLs like <code>https://devpost.com/software/project-name</code> or usernames like <code>username</code></small>
+            <label for="devpost-url">Devpost URL</label>
+            <input type="url" id="devpost-url" name="devpostUrl" required placeholder="https://devpost.com/software/your-project">
           </div>
-          <button type="submit" class="btn btn-primary" id="import-btn">Import</button>
+          <button type="submit" class="btn btn-primary">Import from Devpost</button>
         </form>
-        <div id="import-status" class="import-status"></div>
+        <div id="devpost-status" class="import-status"></div>
       </div>
 
-      <div id="import-preview" class="import-preview hidden">
-        <div class="preview-card">
-          <div class="preview-field">
-            <strong id="preview-title"></strong>
-          </div>
-          <div class="preview-field">
-            <span id="preview-description"></span>
-          </div>
-          <div class="preview-links">
-            <span id="preview-github" class="preview-link"></span>
-            <span id="preview-video" class="preview-link"></span>
-            <span id="preview-website" class="preview-link"></span>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="edit-import-btn">Edit</button>
-          <button type="button" class="btn btn-primary" id="save-import-btn">Save</button>
-        </div>
+      <div class="import-divider">
+        <span>or</span>
       </div>
 
-      <div id="profile-preview" class="profile-preview hidden">
-        <p class="preview-count"><span id="profile-user-name"></span> has <span id="profile-count">0</span> projects</p>
-        <div id="project-select-list" class="project-select-list"></div>
-        <div class="import-actions">
-          <button type="button" class="btn btn-link btn-sm" id="select-all-btn">Select all</button>
-          <button type="button" class="btn btn-link btn-sm" id="deselect-all-btn">Deselect all</button>
-          <button type="button" class="btn btn-primary" id="import-selected-btn">Import Selected</button>
-        </div>
-      </div>
+      <div class="import-method" id="manual-import">
+        <h3>Enter Manually</h3>
+        <p class="method-description">Fill in the pitch details yourself.</p>
+        <form id="manual-form">
+          <div class="form-group">
+            <label for="title">Project Title</label>
+            <input type="text" id="title" name="title" required placeholder="e.g., Bugout">
+          </div>
 
-      <div id="import-progress" class="import-progress hidden">
-        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
-        <p id="import-status"></p>
+          <div class="form-group">
+            <label for="description">Short Description</label>
+            <textarea id="description" name="description" rows="2" required placeholder="One sentence about what this project does..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="story">Full Story (optional)</label>
+            <textarea id="story" name="story" rows="4" placeholder="More detailed explanation..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="videoUrl">YouTube Video URL (optional)</label>
+            <input type="url" id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+          </div>
+
+          <div class="form-group">
+            <label for="githubUrl">GitHub (optional)</label>
+            <input type="url" id="githubUrl" name="githubUrl" placeholder="https://github.com/...">
+          </div>
+
+          <div class="form-group">
+            <label for="websiteUrl">Website (optional)</label>
+            <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://...">
+          </div>
+
+          <div class="form-group">
+            <label for="provenanceUrl">Source URL (optional)</label>
+            <input type="url" id="provenanceUrl" name="provenanceUrl" placeholder="https://devpost.com/software/...">
+          </div>
+
+          <button type="submit" class="btn btn-primary">Create Project</button>
+        </form>
       </div>
     </section>
   </main>
 
-  <!-- Import Modal -->
-  <div id="import-modal" class="modal fade" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="importModalLabel">Import from Devpost</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="modal-import-form">
-            <div class="form-step active" data-step="1">
-              <p class="step-hint">Paste a Devpost project URL</p>
-              <div class="form-group">
-                <input type="url" id="modal-devpost-url" name="devpost-url" placeholder="https://devpost.com/software/your-project" required>
-              </div>
-              <button type="submit" class="btn btn-primary" id="modal-import-btn">Import</button>
-            </div>
-          </form>
-          <div id="modal-import-preview" class="import-preview hidden">
-            <div class="preview-card">
-              <div class="preview-field">
-                <strong id="modal-preview-title"></strong>
-              </div>
-              <div class="preview-field">
-                <span id="modal-preview-description"></span>
-              </div>
-              <div class="preview-links">
-                <span id="modal-preview-github" class="preview-link"></span>
-                <span id="modal-preview-video" class="preview-link"></span>
-                <span id="modal-preview-website" class="preview-link"></span>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary" id="modal-edit-import-btn">Edit</button>
-              <button type="button" class="btn btn-primary" id="modal-save-import-btn">Save</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script src="/import.js"></script>
-  <%- include('./partials/footer') %>
+  <%- include("./partials/footer") %>
+
+  <script>
+    document.getElementById('current-year')?.textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
