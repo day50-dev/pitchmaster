@@ -3,18 +3,17 @@
       <div class="d-flex flex-wrap align-items-center gap-3">
         <a href="/" class="brand-logo text-decoration-none">Pitch///asters</a>
         <p class="tagline text-secondary mb-0 d-none d-md-block small">Re-pitch your hackathon projects. Get real feedback.</p>
-        <form action="/search" method="GET" class="header-search flex-grow-1" style="max-width: 400px;">
-          <div class="input-group">
-            <input type="text" name="q" placeholder="Search..." class="form-control border-end-0">
-            <button type="submit" class="btn btn-outline-secondary border-start-0" aria-label="Search">
-              <span class="search-icon">🔍</span>
-            </button>
-          </div>
-        </form>
         <nav class="d-flex align-items-center gap-2 ms-auto">
-          <a href="/notifications" class="nav-notification position-relative" id="nav-notifications">
+          <a href="/search" class="nav-search" id="nav-search">
+            <i class="bi bi-search fs-5"></i>
+          </a>
+          <a href="/notifications" class="nav-notification position-relative d-none d-sm-block" id="nav-notifications">
             <i class="bi bi-bell fs-5"></i>
             <span class="notification-badge hidden position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-badge">0</span>
+          </a>
+          <a href="/notifications" class="nav-notification position-relative d-sm-none" id="nav-notifications-mobile">
+            <i class="bi bi-bell fs-5"></i>
+            <span class="notification-badge hidden position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-badge-mobile">0</span>
           </a>
           <div class="user-dropdown" id="user-dropdown">
             <button class="user-dropdown-toggle d-flex align-items-center gap-2 border rounded p-1" id="user-dropdown-toggle">

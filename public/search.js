@@ -3,37 +3,39 @@ const urlParams = new URLSearchParams(window.location.search);
 const query = urlParams.get('q') || '';
 
 async function init() {
-  await loadAuth();
-  
+  // Pre-fill search input if there's a query
+  const searchInput = document.getElementById('search-input');
+  if (searchInput && query) {
+    searchInput.value = query;
+  }
+
   // Display search term
-  document.getElementById('search-term').textContent = query || '(empty query)';
+  document.getElementById('search-term').textContent = query;
   document.getElementById('no-results-term').textContent = query;
-  
+
   if (!query.trim()) {
-    showNoResults();
+    // No query - just show the search box
+    document.getElementById('search-results').classList.add('d-none');
+    document.getElementById('no-results').classList.add('d-none');
     return;
   }
-  
-  // Search across all types
-  await Promise.all([
+
+  // Has query - search across all types
+  const results = await Promise.all([
     searchProjects(query),
     searchEvents(query),
     searchUsers(query)
   ]);
-}
 
-async function loadAuth() {
-  const res = await fetch('/api/me');
-  const user = await res.json();
+  const [projects, events, users] = results;
+  const hasResults = projects.length > 0 || events.length > 0 || users.length > 0;
 
-  const authSection = document.getElementById('auth-section');
-  if (user) {
-    authSection.innerHTML = `
-      <div class="user-info">
-        <img src="${user.avatarUrl || 'https://github.com/ghost.png'}" alt="${user.displayName}">
-        <span>${user.displayName || user.username}</span>
-      </div>
-    `;
+  if (hasResults) {
+    document.getElementById('search-results').classList.remove('d-none');
+    document.getElementById('no-results').classList.add('d-none');
+  } else {
+    document.getElementById('search-results').classList.add('d-none');
+    document.getElementById('no-results').classList.remove('d-none');
   }
 }
 
@@ -41,12 +43,14 @@ async function searchProjects(query) {
   const res = await fetch(`/api/search/projects?q=${encodeURIComponent(query)}`);
   const projects = await res.json();
   renderProjectsResults(projects);
+  return projects;
 }
 
 async function searchEvents(query) {
   const res = await fetch(`/api/search/events?q=${encodeURIComponent(query)}`);
   const events = await res.json();
   renderEventsResults(events);
+  return events;
 }
 
 async function searchUsers(query) {

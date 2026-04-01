@@ -83,19 +83,12 @@ body {
   display: none;
 }
 
-/* User dropdown */
+/* User dropdown - minimal */
 .user-dropdown {
   position: relative;
 }
 
 .user-dropdown-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  padding: 0.375rem 0.625rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -106,21 +99,10 @@ body {
 }
 
 .user-avatar-small {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.user-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--bs-body-color);
-}
-
-.dropdown-arrow {
-  font-size: 0.625rem;
-  color: var(--bs-secondary);
 }
 
 .user-dropdown-menu {
@@ -132,33 +114,18 @@ body {
   border: 1px solid var(--bs-border-color);
   border-radius: var(--bs-border-radius);
   box-shadow: var(--bs-box-shadow-lg);
-  min-width: 200px;
   z-index: 1000;
 }
 
-.user-dropdown-menu.hidden {
-  display: none;
-}
-
 .dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 1rem;
-  color: var(--bs-body-color);
-  text-decoration: none;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  transition: background-color 0.2s;
 }
 
-.dropdown-item:hover {
-  background: var(--bs-light);
-  text-decoration: none;
-  color: var(--bs-body-color);
-}
-
-.dropdown-icon {
-  font-size: 1rem;
+.dropdown-divider {
+  height: 1px;
+  background: var(--bs-border-color);
+  margin: 0.25rem 0;
 }
 
 .dropdown-divider {
@@ -2380,55 +2347,12 @@ section h2 {
   text-decoration: none;
 }
 
-/* Responsive */
+/* Mobile adjustments */
 @media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-
-  .header-search {
-    max-width: none;
-    order: 3;
-    width: 100%;
-  }
-
-  .tagline {
-    display: none;
-  }
-
-  .header-nav {
-    margin-left: 0;
-    width: 100%;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  /* Mobile: logo + bell + dropdown in one row */
   .brand-logo {
     font-size: 1.25rem;
   }
-
-  .header-nav {
-    display: flex;
-    flex-direction: row;
-    gap: 0.5rem;
-  }
-
-  /* Hide username on mobile, show only avatar */
-  .user-dropdown-toggle .user-name {
-    display: none;
-  }
-
-  .user-dropdown-toggle .dropdown-arrow {
-    display: none;
-  }
-
-  .user-dropdown-toggle {
-    padding: 0.25rem;
-  }
-
+  
   .user-avatar-small {
     width: 32px;
     height: 32px;
