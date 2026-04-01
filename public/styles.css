@@ -44,98 +44,43 @@ body {
   font-family: 'Fjalla One', sans-serif;
   letter-spacing: -0.04rem;
   font-weight: 500;
-  font-size: 1.75rem;
   font-style: italic;
-  margin: 0;
   color: var(--bs-primary);
-  text-decoration: none;
-  transition: opacity 0.2s;
+  white-space: nowrap;
 }
 
-.brand-logo:hover {
-  opacity: 0.8;
-  text-decoration: none;
+/* Header - minimal, Bootstrap handles layout */
+.user-dropdown-menu {
+  min-width: 180px;
 }
 
-/* Header */
-header {
-  background: white;
-  border-bottom: 1px solid var(--bs-border-color);
-  box-shadow: var(--bs-box-shadow-sm);
-  padding: 1rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+.user-dropdown-menu.hidden {
+  display: none;
 }
 
-.header-content {
+.dropdown-item {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.header-search {
-  display: flex;
-  gap: 0;
-  flex: 1;
-  max-width: 400px;
+.dropdown-item:hover {
+  text-decoration: none;
 }
 
-.input-group {
-  display: flex;
-  flex: 1;
-}
-
-.search-input {
-  flex: 1;
-  padding: 0.5rem 0.875rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius-sm) 0 0 var(--bs-border-radius-sm);
-  font-size: 0.875rem;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--bs-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.btn-search {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--bs-border-color);
-  border-left: none;
-  border-radius: 0 var(--bs-border-radius-sm) var(--bs-border-radius-sm) 0;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-search:hover {
-  background: var(--bs-light);
-  border-color: var(--bs-primary);
-}
-
-.search-icon {
+.dropdown-icon {
   font-size: 1rem;
 }
 
-.tagline {
-  margin: 0;
-  color: var(--bs-secondary);
-  font-size: 0.875rem;
-  flex: 1;
-  min-width: 200px;
+.notification-badge {
+  font-size: 0.625rem;
+  padding: 0.2rem 0.35rem;
+  min-width: 1rem;
+  height: 1rem;
 }
 
-.header-nav {
-  margin-left: auto;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+.notification-badge.hidden {
+  display: none;
 }
 
 /* User dropdown */
