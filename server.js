@@ -12,7 +12,7 @@ const { marked } = require('marked');
 const app = express();
 const db = new Database('pitchthehack.db');
 
-// Add feedback and videoDuration columns to existing tables (migration)
+// Add feedback, videoDuration, and role columns to existing tables (migration)
 try {
   db.exec('ALTER TABLE responses ADD COLUMN feedbackReason TEXT');
 } catch (e) { /* Column may already exist */ }
@@ -22,6 +22,24 @@ try {
 try {
   db.exec('ALTER TABLE revisions ADD COLUMN videoDuration INTEGER');
 } catch (e) { /* Column may already exist */ }
+try {
+  db.exec('ALTER TABLE users ADD COLUMN role TEXT DEFAULT "normal"');
+} catch (e) { /* Column may already exist */ }
+
+// Create notifications table if not exists (migration)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    type TEXT,
+    title TEXT,
+    message TEXT,
+    url TEXT,
+    isRead INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id)
+  )
+`);
 
 // Updated schema: projects have revisions, provenance URL for uniqueness
 db.exec(`
@@ -31,7 +49,20 @@ db.exec(`
     username TEXT,
     displayName TEXT,
     avatarUrl TEXT,
+    role TEXT DEFAULT 'normal',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    type TEXT,
+    title TEXT,
+    message TEXT,
+    url TEXT,
+    isRead INTEGER DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id)
   );
 
   CREATE TABLE IF NOT EXISTS projects (

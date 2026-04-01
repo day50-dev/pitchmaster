@@ -155,6 +155,7 @@ document.getElementById('pitch-form').addEventListener('submit', async (e) => {
     description: document.getElementById('description').value,
     story: document.getElementById('story').value,
     videoUrl: document.getElementById('videoUrl').value,
+    videoDuration: document.getElementById('videoDuration').value,
     githubUrl: document.getElementById('githubUrl').value,
     websiteUrl: document.getElementById('websiteUrl').value,
     provenanceUrl: document.getElementById('provenanceUrl').value,

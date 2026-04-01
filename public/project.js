@@ -139,6 +139,19 @@ function selectRevision(revision) {
     websiteLink.classList.add('hidden');
   }
 
+  // Update video duration badge
+  const durationBadge = document.getElementById('video-duration-badge');
+  const durationText = document.getElementById('video-duration-text');
+  if (revision.videoDuration) {
+    const minutes = Math.floor(revision.videoDuration / 60);
+    const seconds = revision.videoDuration % 60;
+    const durationLabel = seconds > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `${minutes}:00`;
+    durationText.textContent = `${durationLabel} presentation`;
+    durationBadge.classList.remove('hidden');
+  } else {
+    durationBadge.classList.add('hidden');
+  }
+
   // Update description
   const descriptionText = escapeHtml(revision.description || '');
   document.getElementById('revision-description-text').innerHTML = descriptionText.replace(/\n\n/g, '</p><p class="mb-3">').replace(/\n/g, '<br>');
@@ -322,6 +335,7 @@ document.getElementById('add-revision-btn')?.addEventListener('click', () => {
     document.getElementById('rev-description').value = currentRevision.description || '';
     document.getElementById('rev-story').value = currentRevision.story || '';
     document.getElementById('rev-video').value = currentRevision.videoUrl || '';
+    document.getElementById('rev-videoDuration').value = currentRevision.videoDuration || '';
     document.getElementById('rev-github').value = currentRevision.githubUrl || '';
     document.getElementById('rev-website').value = currentRevision.websiteUrl || '';
   }
@@ -343,6 +357,7 @@ document.getElementById('revision-form').addEventListener('submit', async (e) =>
     description: document.getElementById('rev-description').value,
     story: document.getElementById('rev-story').value,
     videoUrl: document.getElementById('rev-video').value,
+    videoDuration: document.getElementById('rev-videoDuration').value,
     githubUrl: document.getElementById('rev-github').value,
     websiteUrl: document.getElementById('rev-website').value
   };
