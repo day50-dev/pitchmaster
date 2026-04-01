@@ -10,6 +10,10 @@ const cheerio = require('cheerio');
 const { marked } = require('marked');
 
 const app = express();
+
+// Configure EJS template engine
+app.set('view engine', 'ejs');
+app.set('views', __dirname + '/views');
 const db = new Database('pitchthehack.db');
 
 // Add feedback, videoDuration, and role columns to existing tables (migration)
@@ -170,7 +174,13 @@ passport.deserializeUser((id, done) => {
 function fetchUrl(url, timeout = 10000) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith('https') ? https : http;
-    const req = protocol.get(url, (res) => {
+    const options = {
+      timeout: timeout,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    };
+    const req = protocol.get(url, options, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => resolve(data));
@@ -314,7 +324,37 @@ app.get('/auth/github/callback',
 
 // Demo mode - always return a demo user (OAuth disabled)
 app.get('/api/me', (req, res) => {
-  res.json({ id: 1, username: 'demo', displayName: 'Demo User', avatarUrl: '' });
+  const user = db.prepare('SELECT id, username, displayName, avatarUrl, role FROM users WHERE id = 1').get();
+  res.json(user || { id: 1, username: 'demo', displayName: 'Demo User', avatarUrl: '', role: 'normal' });
+});
+
+// Get user's notifications
+app.get('/api/me/notifications', (req, res) => {
+  const userId = 1; // Demo user
+  const notifications = db.prepare(`
+    SELECT * FROM notifications
+    WHERE userId = ?
+    ORDER BY isRead ASC, createdAt DESC
+    LIMIT 50
+  `).all(userId);
+  res.json(notifications);
+});
+
+// Mark notification as read
+app.patch('/api/me/notifications/:id/read', (req, res) => {
+  const userId = 1; // Demo user
+  const notificationId = req.params.id;
+  
+  db.prepare('UPDATE notifications SET isRead = 1 WHERE id = ? AND userId = ?').run(notificationId, userId);
+  res.json({ ok: true });
+});
+
+// Mark all notifications as read
+app.post('/api/me/notifications/read-all', (req, res) => {
+  const userId = 1; // Demo user
+  
+  db.prepare('UPDATE notifications SET isRead = 1 WHERE userId = ?').run(userId);
+  res.json({ ok: true });
 });
 
 // Get user's attempted descriptions (responses)
@@ -390,22 +430,23 @@ app.get('/api/users/:id/projects', (req, res) => {
 app.get('/api/projects', (req, res) => {
   const userId = 1; // Demo user
   const projects = db.prepare(`
-    SELECT p.*, 
+    SELECT p.*,
            r.description as latestDescription,
            r.story as latestStory,
            r.imageUrl as latestImageUrl,
            r.videoUrl as latestVideoUrl,
+           r.videoDuration,
            r.githubUrl as latestGithubUrl,
            r.websiteUrl as latestWebsiteUrl,
            r.revisionNumber,
-           u.username, u.displayName, u.avatarUrl,
+           u.username, u.displayName, u.avatarUrl, u.role,
            (SELECT COUNT(*) FROM responses WHERE revisionId = r.id) as responseCount
     FROM projects p
     JOIN users u ON p.userId = u.id
     LEFT JOIN revisions r ON r.id = (
       SELECT id FROM revisions WHERE projectId = p.id ORDER BY revisionNumber DESC LIMIT 1
     )
-    WHERE p.userId = ?
+    WHERE p.userId = ? AND u.role NOT IN ('ghosted', 'banned')
     ORDER BY p.createdAt DESC
   `).all(userId);
   res.json(projects);
@@ -578,6 +619,18 @@ app.post('/api/revisions/:id/responses', (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(revisionId, userId, whatDoesItDo || '', problemItSolves || '', whoIsItFor || '', howToUse || '', feedbackReason || '', feedbackOther || '');
 
+  // Create notification for project owner
+  const revision = db.prepare('SELECT projectId FROM revisions WHERE id = ?').get(revisionId);
+  if (revision) {
+    const project = db.prepare('SELECT userId, title FROM projects WHERE id = ?').get(revision.projectId);
+    if (project && project.userId !== userId) {
+      db.prepare(`
+        INSERT INTO notifications (userId, type, title, message, url)
+        VALUES (?, 'response', 'New description attempt', ?, ?)
+      `).run(project.userId, `Someone attempted to describe "${project.title}"`, `/project/${revision.projectId}`);
+    }
+  }
+
   res.json({ id: result.lastInsertRowid });
 });
 
@@ -663,15 +716,35 @@ function parseDevpostProfile(html, username) {
 
 // Devpost user profile importer - get all projects from a username
 app.post('/api/import/devpost/profile', async (req, res) => {
-  const { username } = req.body;
-  if (!username || !username.match(/^[a-zA-Z0-9_-]+$/)) {
+  let { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: 'Please provide a Devpost username or profile URL' });
+  }
+
+  // Trim whitespace
+  username = username.trim();
+
+  // Extract username from URL if full URL was entered
+  const urlMatch = username.match(/devpost\.com\/(?:software\/[^/]+\/)?([^/?#]+)/i);
+  if (urlMatch) {
+    username = urlMatch[1];
+  }
+
+  // Validate username format
+  if (!username.match(/^[a-zA-Z0-9_-]+$/)) {
     return res.status(400).json({ error: 'Please provide a valid Devpost username' });
   }
-  
-  const profileUrl = `https://devpost.com/${username}`;
-  const html = await fetchUrl(profileUrl);
-  const profileData = parseDevpostProfile(html, username);
-  res.json(profileData);
+
+  try {
+    const profileUrl = `https://devpost.com/${username}`;
+    const html = await fetchUrl(profileUrl);
+    const profileData = parseDevpostProfile(html, username);
+    res.json(profileData);
+  } catch (err) {
+    console.error('Profile import error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch Devpost profile. Please check the username and try again.' });
+  }
 });
 
 // Parse Luma event page to extract OpenGraph data
@@ -860,7 +933,8 @@ app.get('/api/search/projects', (req, res) => {
     LEFT JOIN revisions r ON r.id = (
       SELECT id FROM revisions WHERE projectId = p.id ORDER BY revisionNumber DESC LIMIT 1
     )
-    WHERE p.title LIKE ? OR r.description LIKE ? OR u.displayName LIKE ? OR u.username LIKE ?
+    WHERE (p.title LIKE ? OR r.description LIKE ? OR u.displayName LIKE ? OR u.username LIKE ?)
+      AND u.role NOT IN ('ghosted', 'banned')
     ORDER BY p.createdAt DESC
     LIMIT 20
   `).all(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
@@ -885,60 +959,114 @@ app.get('/api/search/events', (req, res) => {
 app.get('/api/search/users', (req, res) => {
   const q = req.query.q || '';
   if (!q.trim()) return res.json([]);
-  
+
   const users = db.prepare(`
-    SELECT id, username, displayName, avatarUrl
+    SELECT id, username, displayName, avatarUrl, role
     FROM users
-    WHERE username LIKE ? OR displayName LIKE ?
-    ORDER BY displayName ASC
+    WHERE (username LIKE ? OR displayName LIKE ?) AND role != 'banned'
+    ORDER BY 
+      CASE WHEN role = 'ghosted' THEN 1 ELSE 0 END,
+      displayName ASC
     LIMIT 20
   `).all(`%${q}%`, `%${q}%`);
-  
+
   res.json(users);
+});
+
+// Admin: Get all users
+app.get('/api/admin/users', (req, res) => {
+  // In demo mode, allow without auth check
+  const users = db.prepare(`
+    SELECT id, username, displayName, avatarUrl, role, createdAt
+    FROM users
+    ORDER BY createdAt DESC
+  `).all();
+  res.json(users);
+});
+
+// Admin: Update user role
+app.patch('/api/admin/users/:id/role', (req, res) => {
+  const userId = req.params.id;
+  const { role } = req.body;
+  
+  const validRoles = ['normal', 'ghosted', 'banned', 'admin'];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+  
+  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, userId);
+  res.json({ ok: true });
 });
 
 // Serve project.html for /project/:id routes
 app.get('/project/:id', (req, res) => {
-  res.sendFile(__dirname + '/public/project.html');
+  res.render('project');
 });
 
 // Serve event.html for /events/:id routes
 app.get('/events/:id', (req, res) => {
-  res.sendFile(__dirname + '/public/event.html');
+  res.render('event');
 });
 
 // Serve search.html for /search route
 app.get('/search', (req, res) => {
-  res.sendFile(__dirname + '/public/search.html');
+  res.render('search');
+});
+
+// Serve notifications.html for /notifications route
+app.get('/notifications', (req, res) => {
+  res.render('notifications');
+});
+
+// Serve settings.html for /settings route
+app.get('/settings', (req, res) => {
+  res.render('settings');
+});
+
+// Delete account endpoint
+app.delete('/api/me/account', (req, res) => {
+  const userId = 1; // Demo user
+
+  // Soft delete - mark user as banned and anonymize
+  db.prepare(`
+    UPDATE users
+    SET username = ?, displayName = ?, avatarUrl = ?, role = 'banned'
+    WHERE id = ?
+  `).run('deleted_user_' + userId, 'Deleted User', '', userId);
+
+  // Optionally: Delete or anonymize user's content
+  // For now, we just ban the user to preserve data integrity
+
+  res.json({ ok: true });
 });
 
 // Serve edit.html for /edit route
 app.get('/edit', (req, res) => {
-  res.sendFile(__dirname + '/public/edit.html');
+  res.render('edit');
 });
 
 // Serve import.html for /import route
 app.get('/import', (req, res) => {
-  res.sendFile(__dirname + '/public/import.html');
+  res.render('import');
 });
 
 // Serve profile.html for /profile route (own profile)
 app.get('/profile', (req, res) => {
-  res.sendFile(__dirname + '/public/profile.html');
+  res.render('profile');
 });
 
 // Serve profile.html for /profile/:id route (other user's profile)
 app.get('/profile/:id', (req, res) => {
-  res.sendFile(__dirname + '/public/profile.html');
+  res.render('profile');
 });
 
 // Serve project page for /project/:id routes (including revision links like /project/1/revision/3)
 app.get('/project/:id/revision/:rev', (req, res) => {
-  res.sendFile(__dirname + '/public/project.html');
+  res.render('project');
 });
 
 app.get('/project/:id', (req, res) => {
-  res.sendFile(__dirname + '/public/project.html');
+  res.render('project');
 });
 
 const PORT = process.env.PORT || 3000;

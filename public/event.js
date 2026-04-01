@@ -3,25 +3,10 @@ const eventId = pathParts.find(p => !isNaN(p));
 
 let event = null;
 let meetupModalInstance = null;
+let isAttending = false;
 
 async function init() {
-  await loadAuth();
   await loadEvent();
-}
-
-async function loadAuth() {
-  const res = await fetch('/api/me');
-  const user = await res.json();
-
-  const authSection = document.getElementById('auth-section');
-  if (user) {
-    authSection.innerHTML = `
-      <div class="user-info">
-        <img src="${user.avatarUrl || 'https://github.com/ghost.png'}" alt="${user.displayName}">
-        <span>${user.displayName || user.username}</span>
-      </div>
-    `;
-  }
 }
 
 async function loadEvent() {
@@ -68,12 +53,41 @@ async function loadEvent() {
   if (event.url) {
     document.getElementById('event-luma-link').href = event.url;
   }
-  
+
   document.getElementById('attendee-count').textContent = event.attendeeCount || 0;
-  
+
+  // Check if user is attending
+  await checkAttendance();
+
   // Load attendees and meetups
   loadAttendees();
   loadMeetups();
+}
+
+async function checkAttendance() {
+  const btn = document.getElementById('event-attend-btn');
+  if (!btn) return;
+
+  try {
+    const res = await fetch(`/api/hackathons/${eventId}/attendees`);
+    if (res.ok) {
+      const attendees = await res.json();
+      const userId = 1; // Demo user
+      isAttending = attendees.some(a => a.id === userId);
+
+      if (isAttending) {
+        btn.textContent = 'Cancel';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-outline-danger');
+      } else {
+        btn.textContent = "I'm going";
+        btn.classList.remove('btn-outline-danger');
+        btn.classList.add('btn-secondary');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to check attendance:', err);
+  }
 }
 
 async function loadAttendees() {
@@ -140,20 +154,36 @@ function timeAgo(date) {
   return 'Just now';
 }
 
-// Attend button handler
+// Attend button handler - toggle attendance
 document.getElementById('event-attend-btn')?.addEventListener('click', async () => {
   const btn = document.getElementById('event-attend-btn');
-  
+
   try {
-    const res = await fetch(`/api/hackathons/${eventId}/attend`, { method: 'POST' });
-    if (res.ok) {
-      btn.textContent = 'Going!';
-      btn.disabled = true;
-      document.getElementById('attendee-count').textContent = parseInt(document.getElementById('attendee-count').textContent) + 1;
-      loadAttendees();
+    if (isAttending) {
+      // Cancel attendance
+      const res = await fetch(`/api/hackathons/${eventId}/attend`, { method: 'DELETE' });
+      if (res.ok) {
+        isAttending = false;
+        btn.textContent = "I'm going";
+        btn.classList.remove('btn-outline-danger');
+        btn.classList.add('btn-secondary');
+        document.getElementById('attendee-count').textContent = Math.max(0, parseInt(document.getElementById('attendee-count').textContent) - 1);
+        loadAttendees();
+      }
+    } else {
+      // Mark attendance
+      const res = await fetch(`/api/hackathons/${eventId}/attend`, { method: 'POST' });
+      if (res.ok) {
+        isAttending = true;
+        btn.textContent = 'Cancel';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-outline-danger');
+        document.getElementById('attendee-count').textContent = parseInt(document.getElementById('attendee-count').textContent) + 1;
+        loadAttendees();
+      }
     }
   } catch (err) {
-    alert('Failed to mark attendance');
+    alert('Failed to update attendance');
   }
 });
 

@@ -24,6 +24,7 @@ const profileImportForm = document.getElementById('profile-import-form');
 const profilePreview = document.getElementById('profile-preview');
 const projectSelectList = document.getElementById('project-select-list');
 const selectAllBtn = document.getElementById('select-all-btn');
+const deselectAllBtn = document.getElementById('deselect-all-btn');
 const importSelectedBtn = document.getElementById('import-selected-btn');
 const importProgress = document.getElementById('import-progress');
 
@@ -37,26 +38,76 @@ async function checkAuth() {
   renderAuth();
   loadProjects();
   loadHackathons();
+  loadNotifications();
+}
+
+async function loadNotifications() {
+  const res = await fetch('/api/me/notifications');
+  const notifications = await res.json();
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+  
+  const badge = document.getElementById('notification-badge');
+  const navNotification = document.getElementById('nav-notifications');
+  const notificationIcon = document.getElementById('notification-icon');
+  
+  if (badge) {
+    if (unreadCount > 0) {
+      badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      badge.classList.remove('hidden');
+      if (navNotification) navNotification.classList.add('has-unread');
+      if (notificationIcon) notificationIcon.style.color = '';
+    } else {
+      badge.classList.add('hidden');
+      if (navNotification) navNotification.classList.remove('has-unread');
+    }
+  }
 }
 
 function renderAuth() {
   if (currentUser) {
-    authSection.innerHTML = `
-      <div class="user-info">
-        <img src="${currentUser.avatarUrl || 'https://github.com/ghost.png'}" alt="${currentUser.displayName}">
-        <span>${currentUser.displayName || currentUser.username}</span>
-      </div>
-      <button class="btn btn-logout" id="logout-btn">Logout</button>
-    `;
-    document.getElementById('logout-btn').addEventListener('click', logout);
-    addProjectBtn.classList.remove('hidden');
-    importDevpostBtn.classList.remove('hidden');
+    // Update dropdown
+    const avatarNav = document.getElementById('user-avatar-nav');
+    const nameNav = document.getElementById('user-name-nav');
+    const dropdownToggle = document.getElementById('user-dropdown-toggle');
+    const dropdownMenu = document.getElementById('user-dropdown-menu');
+    const logoutBtn = document.getElementById('logout-btn');
+    
+    if (avatarNav) {
+      avatarNav.src = currentUser.avatarUrl || 'https://github.com/ghost.png';
+      avatarNav.alt = currentUser.displayName || currentUser.username;
+    }
+    if (nameNav) {
+      nameNav.textContent = currentUser.displayName || currentUser.username;
+    }
+    
+    // Toggle dropdown
+    if (dropdownToggle) {
+      dropdownToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('hidden');
+      });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (dropdownMenu && !dropdownMenu.contains(e.target) && e.target !== dropdownToggle) {
+        dropdownMenu.classList.add('hidden');
+      }
+    });
+    
+    // Logout handler
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await logout();
+      });
+    }
+    
+    addProjectBtn?.classList.remove('hidden');
+    importDevpostBtn?.classList.remove('hidden');
   } else {
-    authSection.innerHTML = `
-      <a href="/auth/github" class="btn btn-github">Sign in with GitHub</a>
-    `;
-    addProjectBtn.classList.add('hidden');
-    importDevpostBtn.classList.add('hidden');
+    addProjectBtn?.classList.add('hidden');
+    importDevpostBtn?.classList.add('hidden');
   }
 }
 
@@ -101,14 +152,6 @@ function renderProjects(projects) {
                 <img src="${p.avatarUrl || 'https://github.com/ghost.png'}" class="rounded-circle me-2" alt="${p.displayName}" width="24" height="24">
                 <span class="small text-muted">${p.displayName || p.username}</span>
                 <span class="ms-auto badge bg-secondary">Rev ${p.revisionNumber || 1}</span>
-              </div>
-            </div>
-            <div class="card-footer bg-transparent border-top-0">
-              <div class="d-flex gap-2">
-                ${p.latestVideoUrl ? '<span class="badge bg-danger">🎬 Video</span>' : ''}
-                ${p.latestGithubUrl ? '<span class="badge bg-dark">💻 Code</span>' : ''}
-                ${p.latestWebsiteUrl ? '<span class="badge bg-primary">🌐 Site</span>' : ''}
-                <span class="badge bg-light text-dark ms-auto">${p.responseCount || 0} responses</span>
               </div>
             </div>
           </div>
@@ -320,9 +363,16 @@ profileImportModal.addEventListener('hidden.bs.modal', () => resetProfileForm())
 
 profileImportForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const username = document.getElementById('devpost-username').value;
-  const btn = document.getElementById('profile-import-btn');
+  let username = document.getElementById('devpost-username').value.trim();
   
+  // Extract username from URL if full URL was entered
+  const urlMatch = username.match(/devpost\.com\/(?:software\/[^/]+\/)?([^/?#]+)/i);
+  if (urlMatch) {
+    username = urlMatch[1];
+  }
+  
+  const btn = document.getElementById('profile-import-btn');
+
   btn.textContent = 'Loading...';
   btn.disabled = true;
 
@@ -332,18 +382,25 @@ profileImportForm.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
-    
+
     if (!res.ok) {
       const err = await res.json();
       alert(err.error || 'Failed to fetch profile');
       return;
     }
-    
+
     const data = await res.json();
+    
+    if (!data.projects || data.projects.length === 0) {
+      alert('No projects found for this user');
+      return;
+    }
+    
     profileProjects = data.projects;
     showProfileProjects(data);
   } catch (err) {
-    alert('Failed to fetch Devpost profile');
+    console.error('Profile import error:', err);
+    alert('Failed to fetch Devpost profile: ' + (err.message || 'Unknown error'));
   } finally {
     btn.textContent = 'Find Projects';
     btn.disabled = false;
@@ -351,9 +408,16 @@ profileImportForm.addEventListener('submit', async (e) => {
 });
 
 function showProfileProjects(data) {
-  document.getElementById('profile-user-name').textContent = data.displayName || data.username;
-  document.getElementById('profile-count').textContent = data.projects.length;
+  const userNameEl = document.getElementById('profile-user-name');
+  const profileCountEl = document.getElementById('profile-count');
   
+  if (userNameEl) {
+    userNameEl.textContent = data.displayName || data.username;
+  }
+  if (profileCountEl) {
+    profileCountEl.textContent = data.projects.length;
+  }
+
   projectSelectList.innerHTML = data.projects.map((p, i) => `
     <div class="project-select-item">
       <label>
@@ -363,7 +427,7 @@ function showProfileProjects(data) {
       </label>
     </div>
   `).join('');
-  
+
   profilePreview.classList.remove('hidden');
 }
 
@@ -376,8 +440,12 @@ function resetProfileForm() {
 
 selectAllBtn.addEventListener('click', () => {
   const checkboxes = projectSelectList.querySelectorAll('input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(c => c.checked);
-  checkboxes.forEach(c => c.checked = !allChecked);
+  checkboxes.forEach(c => c.checked = true);
+});
+
+deselectAllBtn.addEventListener('click', () => {
+  const checkboxes = projectSelectList.querySelectorAll('input[type="checkbox"]');
+  checkboxes.forEach(c => c.checked = false);
 });
 
 importSelectedBtn.addEventListener('click', async () => {
@@ -473,7 +541,7 @@ function renderHackathons(hackathons) {
     const startDate = h.startDate ? new Date(h.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBD';
     return `
       <div class="hackathon-card">
-        ${h.imageUrl ? `<div class="hackathon-image" style="background-image: url('${escapeHtml(h.imageUrl)}')"></div>` : ''}
+        ${h.imageUrl ? `<a href="/events/${h.id}" class="hackathon-image-link"><div class="hackathon-image" style="background-image: url('${escapeHtml(h.imageUrl)}')"></div></a>` : ''}
         <div class="hackathon-info">
           <a href="/events/${h.id}" class="hackathon-link">
             <h3 class="hackathon-title">${escapeHtml(h.title || 'Hackathon')}</h3>

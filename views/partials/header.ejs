@@ -1,0 +1,44 @@
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="brand-logo">Pitch///asters</a>
+        <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+        <form action="/search" method="GET" class="header-search">
+          <div class="input-group">
+            <input type="text" name="q" placeholder="Search projects, events, users..." class="search-input">
+            <button type="submit" class="btn btn-search" aria-label="Search">
+              <span class="search-icon">🔍</span>
+            </button>
+          </div>
+        </form>
+        <nav class="header-nav">
+          <a href="/notifications" class="nav-notification" id="nav-notifications">
+            <i class="bi bi-bell" id="notification-icon"></i>
+            <span class="notification-badge hidden" id="notification-badge">0</span>
+          </a>
+          <div class="user-dropdown" id="user-dropdown">
+            <button class="user-dropdown-toggle" id="user-dropdown-toggle">
+              <img src="https://github.com/ghost.png" alt="User" class="user-avatar-small" id="user-avatar-nav">
+              <span class="user-name" id="user-name-nav">User</span>
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="user-dropdown-menu hidden" id="user-dropdown-menu">
+              <a href="/profile" class="dropdown-item">
+                <span class="dropdown-icon">👤</span>
+                My Profile
+              </a>
+              <a href="/settings" class="dropdown-item">
+                <span class="dropdown-icon">⚙️</span>
+                Settings
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="#" class="dropdown-item" id="logout-btn">
+                <span class="dropdown-icon">🚪</span>
+                Logout
+              </a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </header>

@@ -1,0 +1,16 @@
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-copyright">
+        &copy; <span id="current-year"></span> <a href="https://day50.dev" target="_blank" rel="noopener">DAY50, Inc</a>
+      </p>
+      <div class="footer-links">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+        <a href="https://github.com/day50-dev/pitchmaster" target="_blank" rel="noopener">MIT License</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('current-year')?.textContent = new Date().getFullYear();
+  </script>

@@ -39,18 +39,34 @@ async function loadProject() {
   // Update header
   document.getElementById('project-title').textContent = project.title;
   document.getElementById('project-author').innerHTML = `by <a href="/profile/${project.userId}">${project.displayName || project.username}</a>`;
+  
+  // Show provenance/source if imported
+  const provenanceEl = document.getElementById('project-provenance');
   if (project.provenanceUrl) {
-    document.getElementById('project-provenance').textContent = `from ${project.provenanceUrl}`;
+    const domain = project.provenanceUrl.replace(/^https?:\/\//, '').split('/')[0];
+    provenanceEl.innerHTML = `imported from <a href="${escapeHtml(project.provenanceUrl)}" target="_blank" rel="noopener">${escapeHtml(domain)}</a>`;
+  } else {
+    provenanceEl.textContent = '';
+  }
+
+  // Set cover image from latest revision
+  const coverEl = document.getElementById('project-cover');
+  const coverImageUrl = project.revisions?.[0]?.imageUrl || '';
+  if (coverImageUrl && coverEl) {
+    coverEl.style.backgroundImage = `url('${coverImageUrl}')`;
+    coverEl.classList.add('has-image');
+  } else if (coverEl) {
+    coverEl.classList.remove('has-image');
   }
 
   // Update Open Graph meta tags
-  const imageUrl = project.revisions?.[0]?.imageUrl || 'https://pitchmasters.club/og-image.png';
+  const ogImageUrl = project.revisions?.[0]?.imageUrl || 'https://pitchmasters.club/og-image.png';
   const description = project.revisions?.[0]?.description || 'Re-pitch your hackathon projects. Get real feedback.';
   const currentUrl = window.location.href;
-  
+
   document.querySelector('meta[property="og:title"]')?.setAttribute('content', `${project.title} - Pitch///asters`);
   document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
-  document.querySelector('meta[property="og:image"]')?.setAttribute('content', imageUrl);
+  document.querySelector('meta[property="og:image"]')?.setAttribute('content', ogImageUrl);
   document.querySelector('meta[property="og:url"]')?.setAttribute('content', currentUrl);
   document.querySelector('title').textContent = `${project.title} - Pitch///asters`;
 
