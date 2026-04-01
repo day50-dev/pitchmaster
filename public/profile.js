@@ -18,7 +18,9 @@ async function init() {
   } else {
     // Viewing own profile
     user = await fetch('/api/me').then(r => r.json());
-    projects = await fetch('/api/projects').then(r => r.json());
+    const projectsRes = await fetch('/api/projects');
+    const projectsData = await projectsRes.json();
+    projects = projectsData.projects || projectsData;
     attempts = await fetch('/api/me/attempts').then(r => r.json());
     events = await fetch('/api/me/events').then(r => r.json());
   }
