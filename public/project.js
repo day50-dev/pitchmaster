@@ -281,12 +281,36 @@ document.getElementById('response-form').addEventListener('submit', async (e) =>
   }
 });
 
+// Show/hide add revision form
+document.getElementById('add-revision-btn')?.addEventListener('click', () => {
+  const section = document.getElementById('add-revision-section');
+  section.classList.add('visible');
+  
+  // Pre-populate form with current revision data
+  if (currentRevision) {
+    document.getElementById('rev-description').value = currentRevision.description || '';
+    document.getElementById('rev-story').value = currentRevision.story || '';
+    document.getElementById('rev-video').value = currentRevision.videoUrl || '';
+    document.getElementById('rev-github').value = currentRevision.githubUrl || '';
+    document.getElementById('rev-website').value = currentRevision.websiteUrl || '';
+  }
+  
+  // Scroll to form
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+document.getElementById('cancel-revision-btn')?.addEventListener('click', () => {
+  document.getElementById('add-revision-section').classList.remove('visible');
+  document.getElementById('revision-form').reset();
+});
+
 // Add revision form handler
 document.getElementById('revision-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const data = {
     description: document.getElementById('rev-description').value,
+    story: document.getElementById('rev-story').value,
     videoUrl: document.getElementById('rev-video').value,
     githubUrl: document.getElementById('rev-github').value,
     websiteUrl: document.getElementById('rev-website').value
@@ -299,9 +323,10 @@ document.getElementById('revision-form').addEventListener('submit', async (e) =>
   });
 
   if (res.ok) {
-    // Reset form
+    // Hide form and reset
+    document.getElementById('add-revision-section').classList.remove('visible');
     document.getElementById('revision-form').reset();
-    // Reload project
+    // Reload project to show new revision
     await loadProject();
   } else {
     const err = await res.json();

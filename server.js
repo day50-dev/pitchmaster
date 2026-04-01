@@ -54,6 +54,8 @@ db.exec(`
     problemItSolves TEXT,
     whoIsItFor TEXT,
     howToUse TEXT,
+    feedbackReason TEXT,
+    feedbackOther TEXT,
     isCorrectWhatDoesItDo INTEGER DEFAULT NULL,
     isCorrectProblem INTEGER DEFAULT NULL,
     isCorrectWhoIsFor INTEGER DEFAULT NULL,
@@ -490,18 +492,19 @@ app.post('/api/projects/:id/revisions', (req, res) => {
 app.post('/api/revisions/:id/responses', (req, res) => {
   const revisionId = req.params.id;
   const userId = 1; // Demo user
-  const { whatDoesItDo, problemItSolves, whoIsItFor, howToUse } = req.body;
-  
-  // All 4 fields are optional - people can skip any they want
-  if (!whatDoesItDo && !problemItSolves && !whoIsItFor && !howToUse) {
-    return res.status(400).json({ error: 'At least one question must be answered' });
+  const { whatDoesItDo, problemItSolves, whoIsItFor, howToUse, feedbackReason, feedbackOther } = req.body;
+
+  // Either answer at least one question OR provide feedback reason
+  const hasAnswer = whatDoesItDo || problemItSolves || whoIsItFor || howToUse;
+  if (!hasAnswer && !feedbackReason) {
+    return res.status(400).json({ error: 'Please answer at least one question or provide feedback' });
   }
-  
+
   const result = db.prepare(`
-    INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(revisionId, userId, whatDoesItDo || '', problemItSolves || '', whoIsItFor || '', howToUse || '');
-  
+    INSERT INTO responses (revisionId, userId, whatDoesItDo, problemItSolves, whoIsItFor, howToUse, feedbackReason, feedbackOther)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(revisionId, userId, whatDoesItDo || '', problemItSolves || '', whoIsItFor || '', howToUse || '', feedbackReason || '', feedbackOther || '');
+
   res.json({ id: result.lastInsertRowid });
 });
 
