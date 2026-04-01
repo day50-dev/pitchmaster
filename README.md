@@ -6,7 +6,9 @@ You can't pitch it.
 
 People's eyes glaze over.
 
-Sound familiar? You're not alone. **Most builders suck at pitching.** And that's okay—because PitchMasters Club is where we fix that together.
+You're not alone. **Most builders suck at pitching.** Including me.
+
+The PitchMasters Club is where we fix that together.
 
 ---
 
