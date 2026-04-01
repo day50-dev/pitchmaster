@@ -135,6 +135,10 @@
               <input type="text" id="feedbackOther" name="feedbackOther" placeholder="What was the issue?">
             </div>
 
+            <div class="alert alert-info mt-3 d-none" id="feedback-skip-message">
+              <small>Feel free to skip the rest and press submit. Thanks!</small>
+            </div>
+
             <div class="form-group">
               <label for="whatDoesItDo">What does this do?</label>
               <textarea id="whatDoesItDo" name="whatDoesItDo" rows="2" placeholder="Describe what the project is..."></textarea>
@@ -168,10 +172,14 @@
   </main>
 
   <script>
-    // Show/hide "other" text field
+    // Show/hide "other" text field and skip message
     document.getElementById('feedbackReason')?.addEventListener('change', (e) => {
       const otherGroup = document.getElementById('feedback-other-group');
+      const skipMessage = document.getElementById('feedback-skip-message');
+      const hasValue = e.target.value !== '';
+      
       otherGroup.style.display = e.target.value === 'other' ? 'block' : 'none';
+      skipMessage.classList.toggle('d-none', !hasValue);
     });
   </script>
 
