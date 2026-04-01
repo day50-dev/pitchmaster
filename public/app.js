@@ -468,33 +468,68 @@ function renderHackathons(hackathons) {
     hackathonsList.innerHTML = '<p class="empty-state">No upcoming hackathons. Add one from Luma!</p>';
     return;
   }
-  
+
   hackathonsList.innerHTML = hackathons.map(h => {
     const startDate = h.startDate ? new Date(h.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBD';
     return `
       <div class="hackathon-card">
         ${h.imageUrl ? `<div class="hackathon-image" style="background-image: url('${escapeHtml(h.imageUrl)}')"></div>` : ''}
         <div class="hackathon-info">
-          <h3 class="hackathon-title">${escapeHtml(h.title || 'Hackathon')}</h3>
+          <a href="/events/${h.id}" class="hackathon-link">
+            <h3 class="hackathon-title">${escapeHtml(h.title || 'Hackathon')}</h3>
+          </a>
           <p class="hackathon-date">${startDate}</p>
           <p class="hackathon-description">${escapeHtml(h.description || '').substring(0, 100)}${(h.description || '').length > 100 ? '...' : ''}</p>
           <div class="hackathon-actions">
-            <span class="attendee-count">${h.attendeeCount || 0} attending</span>
+            <a href="/events/${h.id}" class="attendee-count">${h.attendeeCount || 0} attending</a>
             <button class="btn btn-small btn-attend" data-id="${h.id}">I'm going</button>
             <button class="btn btn-small btn-meetup" data-id="${h.id}">Add meetup</button>
-            <a href="${escapeHtml(h.url)}" target="_blank" class="btn btn-small">View</a>
           </div>
         </div>
       </div>
     `;
   }).join('');
-  
+
   // Add attend button handlers
   hackathonsList.querySelectorAll('.btn-attend').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const id = btn.dataset.id;
       await fetch(`/api/hackathons/${id}/attend`, { method: 'POST' });
       loadHackathons();
+    });
+  });
+  
+  // Add meetup button handlers
+  hackathonsList.querySelectorAll('.btn-meetup').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const meetupModal = document.getElementById('meetup-modal');
+      const meetupModalInstance = new bootstrap.Modal(meetupModal);
+      meetupModalInstance.show();
+      
+      // Load meetups for this hackathon
+      const meetupsList = document.getElementById('meetups-list');
+      const res = await fetch(`/api/hackathons/${id}/meetups`);
+      const meetups = await res.json();
+      
+      if (meetups.length === 0) {
+        meetupsList.innerHTML = '<p class="empty-state">No meetups yet. Add one!</p>';
+      } else {
+        meetupsList.innerHTML = meetups.map(m => `
+          <div class="meetup-item">
+            <div class="meetup-header">
+              <strong>${escapeHtml(m.displayName || m.username)}</strong>
+              ${m.location ? `<span class="meetup-location">📍 ${escapeHtml(m.location)}</span>` : ''}
+            </div>
+            ${m.comment ? `<p class="meetup-comment">${escapeHtml(m.comment)}</p>` : ''}
+          </div>
+        `).join('');
+      }
+      
+      // Store hackathon ID for form submission
+      window.currentHackathonId = id;
     });
   });
 }
@@ -585,16 +620,23 @@ meetupForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const location = document.getElementById('meetup-location').value;
   const comment = document.getElementById('meetup-comment').value;
-  
-  const res = await fetch(`/api/hackathons/${currentHackathonId}/meetups`, {
+  const hackathonId = window.currentHackathonId || currentHackathonId;
+
+  const res = await fetch(`/api/hackathons/${hackathonId}/meetups`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ location, comment })
   });
-  
+
   if (res.ok) {
     meetupForm.reset();
-    loadMeetups(currentHackathonId);
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('meetup-modal'));
+    if (modal) modal.hide();
+    // Reload meetups if on event page
+    if (window.location.pathname.startsWith('/events/')) {
+      location.reload();
+    }
   }
 });
 

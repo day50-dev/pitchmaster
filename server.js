@@ -12,12 +12,15 @@ const { marked } = require('marked');
 const app = express();
 const db = new Database('pitchthehack.db');
 
-// Add feedback columns to existing responses table (migration)
+// Add feedback and videoDuration columns to existing tables (migration)
 try {
   db.exec('ALTER TABLE responses ADD COLUMN feedbackReason TEXT');
 } catch (e) { /* Column may already exist */ }
 try {
   db.exec('ALTER TABLE responses ADD COLUMN feedbackOther TEXT');
+} catch (e) { /* Column may already exist */ }
+try {
+  db.exec('ALTER TABLE revisions ADD COLUMN videoDuration INTEGER');
 } catch (e) { /* Column may already exist */ }
 
 // Updated schema: projects have revisions, provenance URL for uniqueness
@@ -49,6 +52,7 @@ db.exec(`
     story TEXT,
     imageUrl TEXT,
     videoUrl TEXT,
+    videoDuration INTEGER,
     githubUrl TEXT,
     websiteUrl TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -282,6 +286,35 @@ app.get('/api/me', (req, res) => {
   res.json({ id: 1, username: 'demo', displayName: 'Demo User', avatarUrl: '' });
 });
 
+// Get user's attempted descriptions (responses)
+app.get('/api/me/attempts', (req, res) => {
+  const userId = 1; // Demo user
+  const attempts = db.prepare(`
+    SELECT r.id, r.revisionId, r.whatDoesItDo, r.problemItSolves, r.whoIsItFor, r.howToUse, r.feedbackReason, r.feedbackOther, r.createdAt,
+           rev.description as projectDescription,
+           p.id as projectId, p.title as projectTitle, p.provenanceUrl
+    FROM responses r
+    JOIN revisions rev ON r.revisionId = rev.id
+    JOIN projects p ON rev.projectId = p.id
+    WHERE r.userId = ?
+    ORDER BY r.createdAt DESC
+  `).all(userId);
+  res.json(attempts);
+});
+
+// Get events the user is attending
+app.get('/api/me/events', (req, res) => {
+  const userId = 1; // Demo user
+  const events = db.prepare(`
+    SELECT h.*, a.createdAt as attendedAt
+    FROM hackathons h
+    JOIN hackathon_attendees a ON h.id = a.hackathonId
+    WHERE a.userId = ?
+    ORDER BY COALESCE(h.startDate, '9999-12-31') ASC
+  `).all(userId);
+  res.json(events);
+});
+
 // OAuth disabled - logout does nothing in demo mode
 app.post('/auth/logout', (req, res) => {
   res.json({ ok: true });
@@ -415,9 +448,9 @@ app.post('/api/projects', async (req, res) => {
       const newRevNum = (maxRev.max || 0) + 1;
       
       const revResult = db.prepare(`
-        INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
+        INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, videoDuration, githubUrl, websiteUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(projectId, newRevNum, description, story || '', videoUrl || '', pitchAnswers.videoDuration || null, githubUrl || '', websiteUrl || '');
       
       // If pitch creator answered the 4 questions, create a self-response
       if (pitchAnswers.pitchWhatDoesItDo || pitchAnswers.pitchProblemItSolves || pitchAnswers.pitchWhoIsItFor || pitchAnswers.pitchHowToUse) {
@@ -450,9 +483,9 @@ app.post('/api/projects', async (req, res) => {
   
   // Create first revision
   const revResult = db.prepare(`
-    INSERT INTO revisions (projectId, revisionNumber, description, story, imageUrl, videoUrl, githubUrl, websiteUrl)
-    VALUES (?, 1, ?, ?, ?, ?, ?, ?)
-  `).run(projectId, description, story || '', finalImageUrl, videoUrl || '', githubUrl || '', websiteUrl || '');
+    INSERT INTO revisions (projectId, revisionNumber, description, story, imageUrl, videoUrl, videoDuration, githubUrl, websiteUrl)
+    VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?)
+  `).run(projectId, description, story || '', finalImageUrl, videoUrl || '', pitchAnswers.videoDuration || null, githubUrl || '', websiteUrl || '');
 
   // If pitch creator answered the 4 questions, create a self-response
   if (pitchAnswers.pitchWhatDoesItDo || pitchAnswers.pitchProblemItSolves || pitchAnswers.pitchWhoIsItFor || pitchAnswers.pitchHowToUse) {
@@ -482,9 +515,9 @@ app.post('/api/projects/:id/revisions', (req, res) => {
   const newRevNum = (maxRev.max || 0) + 1;
   
   const revResult = db.prepare(`
-    INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(projectId, newRevNum, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
+    INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, videoDuration, githubUrl, websiteUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(projectId, newRevNum, description, story || '', videoUrl || '', pitchAnswers.videoDuration || null, githubUrl || '', websiteUrl || '');
 
   // If pitch creator answered the 4 questions, create a self-response
   if (pitchAnswers.pitchWhatDoesItDo || pitchAnswers.pitchProblemItSolves || pitchAnswers.pitchWhoIsItFor || pitchAnswers.pitchHowToUse) {
@@ -780,9 +813,72 @@ app.get('/api/hackathons/:id/attendees', (req, res) => {
   res.json(attendees);
 });
 
+// Search API endpoints
+app.get('/api/search/projects', (req, res) => {
+  const q = req.query.q || '';
+  if (!q.trim()) return res.json([]);
+  
+  const projects = db.prepare(`
+    SELECT p.*,
+           r.description as latestDescription,
+           r.imageUrl as latestImageUrl,
+           r.revisionNumber,
+           u.username, u.displayName
+    FROM projects p
+    JOIN users u ON p.userId = u.id
+    LEFT JOIN revisions r ON r.id = (
+      SELECT id FROM revisions WHERE projectId = p.id ORDER BY revisionNumber DESC LIMIT 1
+    )
+    WHERE p.title LIKE ? OR r.description LIKE ? OR u.displayName LIKE ? OR u.username LIKE ?
+    ORDER BY p.createdAt DESC
+    LIMIT 20
+  `).all(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+  
+  res.json(projects);
+});
+
+app.get('/api/search/events', (req, res) => {
+  const q = req.query.q || '';
+  if (!q.trim()) return res.json([]);
+  
+  const events = db.prepare(`
+    SELECT * FROM hackathons
+    WHERE title LIKE ? OR description LIKE ?
+    ORDER BY COALESCE(startDate, '9999-12-31') ASC
+    LIMIT 20
+  `).all(`%${q}%`, `%${q}%`);
+  
+  res.json(events);
+});
+
+app.get('/api/search/users', (req, res) => {
+  const q = req.query.q || '';
+  if (!q.trim()) return res.json([]);
+  
+  const users = db.prepare(`
+    SELECT id, username, displayName, avatarUrl
+    FROM users
+    WHERE username LIKE ? OR displayName LIKE ?
+    ORDER BY displayName ASC
+    LIMIT 20
+  `).all(`%${q}%`, `%${q}%`);
+  
+  res.json(users);
+});
+
 // Serve project.html for /project/:id routes
 app.get('/project/:id', (req, res) => {
   res.sendFile(__dirname + '/public/project.html');
+});
+
+// Serve event.html for /events/:id routes
+app.get('/events/:id', (req, res) => {
+  res.sendFile(__dirname + '/public/event.html');
+});
+
+// Serve search.html for /search route
+app.get('/search', (req, res) => {
+  res.sendFile(__dirname + '/public/search.html');
 });
 
 // Serve edit.html for /edit route
