@@ -1,5 +1,5 @@
-let currentUser = null;
 let deleteModalInstance = null;
+let currentUser = null;
 
 async function init() {
   await loadUser();

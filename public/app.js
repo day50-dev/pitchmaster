@@ -9,17 +9,13 @@ const importModal = document.getElementById('import-modal');
 const addHackathonBtn = document.getElementById('add-hackathon-btn');
 const hackathonsList = document.getElementById('hackathons-list');
 const hackathonModal = document.getElementById('hackathon-modal');
-const closeHackathon = document.getElementById('close-hackathon');
 const hackathonForm = document.getElementById('hackathon-form');
 const projectForm = document.getElementById('project-form');
 const importForm = document.getElementById('import-form');
-const closeModal = document.querySelector('.close-modal');
-const closeImport = document.getElementById('close-import');
 const importPreview = document.getElementById('import-preview');
 const saveImportBtn = document.getElementById('save-import-btn');
 const profileImportBtn = document.getElementById('import-profile-btn');
 const profileImportModal = document.getElementById('profile-import-modal');
-const closeProfileImport = document.getElementById('close-profile-import');
 const profileImportForm = document.getElementById('profile-import-form');
 const profilePreview = document.getElementById('profile-preview');
 const projectSelectList = document.getElementById('project-select-list');
@@ -28,40 +24,20 @@ const deselectAllBtn = document.getElementById('deselect-all-btn');
 const importSelectedBtn = document.getElementById('import-selected-btn');
 const importProgress = document.getElementById('import-progress');
 
-let currentUser = null;
 let importedData = null;
 let profileProjects = [];
+let currentUser = null;
 
-async function checkAuth() {
-  const res = await fetch('/api/me');
-  currentUser = await res.json();
+async function init() {
+  await loadUser();
   loadProjects();
   loadHackathons();
 }
 
-async function loadNotifications() {
-  const res = await fetch('/api/me/notifications');
-  const notifications = await res.json();
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  const badge = document.getElementById('notification-badge');
-  const navNotification = document.getElementById('nav-notifications');
-  const notificationIcon = document.getElementById('notification-icon');
-
-  if (badge) {
-    if (unreadCount > 0) {
-      badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-      badge.classList.remove('hidden');
-      if (navNotification) navNotification.classList.add('has-unread');
-      if (notificationIcon) notificationIcon.style.color = '';
-    } else {
-      badge.classList.add('hidden');
-      if (navNotification) navNotification.classList.remove('has-unread');
-    }
-  }
-}
-
-function renderAuth() {
+async function loadUser() {
+  const res = await fetch('/api/me');
+  currentUser = await res.json();
+  
   if (currentUser) {
     addProjectBtn?.classList.remove('hidden');
     importDevpostBtn?.classList.remove('hidden');
@@ -724,4 +700,4 @@ meetupForm.addEventListener('submit', async (e) => {
   }
 });
 
-checkAuth();
+init();

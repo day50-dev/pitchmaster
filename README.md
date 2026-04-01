@@ -1,45 +1,146 @@
-# Purpose 
+# The PitchMasters Club
 
-pitchmasters.club is a free platform for technologists who have built things at hackathons or otherwise online and passionately believe they made something valuable and ready for market but pitched them terribly aren't getting any traction online. 
+## Where Brilliant Builders Finally Get Heard
 
-It's for open minded people who assume they are doing things terribly wrong and want to expose themselves to real feedback to quickly improve without having to work another weekend for a 5 minute opportunity to blow it.
+**Free. Exclusive. Empowering.**
 
-It's a frustrating and discouraging experience.
+You built something incredible at a hackathon. You coded through the night. You solved a real problem. You believed in it.
 
-Usually they find people completely misunderstand the offering. Learning how pitching works is completely different from executing and practice makes the difference.
+Then you pitched it.
 
-What I want is for people to come together and re-pitch their old hackathons or other projects they believe in. 
+And watched their eyes glaze over.
 
-Then audience members tell them what they think it does. 
+Sound familiar? You're not alone. **Most builders suck at pitching.** And that's okay—because PitchMasters Club is where we fix that together.
 
-there's a scoring metric that the pitcher gives on how accurate the audience was at describing the pitchers intention and it helps them works on not sucking as much.  
+---
 
-It's like toastmasters but the problem with toastmasters is the topic isn't technical, it's not something you made, passionately believe in, you aren't in front of the industry... Etc
+## What Is This?
 
-I've already asked around there's interests. 
+PitchMasters Club is a **free, asynchronous platform** for technologists who:
 
-I first thought about a scheduled meeting but I think asynchronous is best. You upload the original pitch, people try to tell you what you made, you discover they're totally wrong, you can do revisions etc... there's some kind of reputation and reward system something something to keep people engaged. 
+- Built something they genuinely believe in
+- Pitch it terribly (we've all been there)
+- Want honest feedback without the weekend-long hackathon pressure
+- Are ready to get better at explaining what they made
 
-Maybe with random prizes like credits. You can call them "2nd stab sponsors" ... I mean maybe someone really did an excellent 11labs killer app that could lead to massive revenue but just doesn't do the eye contact and smile game. They leave thinking "well I guess I tried but nobody wanted it"
+This isn't Toastmasters. This isn't some generic public speaking course. **This is for people who ship code.**
 
-I mean it's bullshit that people who know thow to smile and nod their head better perform better than people who build potentially billion dollar profit engines that are ready to deploy and this is how you get better at it.
+---
 
-There can be a live channel but that's more a discord or other platform thing ... you can hook things back to the site via bots for that but it's best to not try to solve the live conference problem
+## How It Works
 
-# Overview
-pitchmasters.club has users wihch have projects. Each project has one or more revisions. Globally Unique revision ids are first class objects.
+### 1. Upload Your Pitch
+Import your project from Devpost (or add it manually). Video, GitHub, live demo—whatever you've got.
 
-The revision has a few things:
-    video - youtube 
-    github - code
-    website - if live
-    submission - such as devpost.
+### 2. The Audience Decodes
+Real people watch your pitch and answer four simple questions:
+- What does this do?
+- What problem does it solve?
+- Who is this for?
+- How do you use it?
 
-Then there are audience. The audience isn't "judging" they are "decoding". They need to answer questions:
+### 3. Discover the Gap
+Here's where it gets uncomfortable (in a good way). You'll see exactly where people misunderstood what you built. **That gap between your intention and their understanding? That's what we're here to close.**
 
-    What does this do?
-    What problem does it solve?
-    Who is this for?
-    How do you use it?
+### 4. Revise and Repeat
+Create a new revision. Try a different approach. Watch your accuracy score improve. Get better.
 
-There might have to be incentivization currency so that people engage with other people's products. That exact incentive structure still needs to be thought through and probably won't be right the first time.
+---
+
+## Why This Exists
+
+It's bullshit that people who smile and nod better get more traction than people who build billion-dollar profit engines.
+
+Some founder with mediocre tech and great eye contact gets funded. You with an 11Labs killer app that's ready to deploy get passed over because you didn't "sell it right."
+
+**We're fixing that by helping you fix that.**
+
+---
+
+## What Makes This Different
+
+| Traditional Pitch Events | PitchMasters Club |
+|--------------------------|-------------------|
+| Scheduled meetings | Async—do it on your time |
+| Generic topics | Your actual technical projects |
+| One-shot pressure | Unlimited revisions |
+| Judging | Decoding (no judgment, just data) |
+| Industry gatekeepers | Real peer feedback |
+| **Not free** | **Always free** |
+
+---
+
+## Who This Is For
+
+- Hackathon builders who know they pitched poorly
+- Open-source maintainers who can't explain their project
+- Technical founders who get misunderstood
+- Anyone willing to assume they're doing it wrong and want to improve
+
+**Who this is NOT for:**
+- People who think their pitch is perfect
+- Anyone unwilling to hear honest feedback
+- Folks who want to judge instead of decode
+
+---
+
+## The Philosophy
+
+**Pitching is a skill separate from building.** And like any skill, it requires practice and feedback.
+
+The problem with most feedback loops:
+- They're too slow (wait for the next hackathon?)
+- They're too vague ("good job!" or "needs work")
+- They're too judgmental (judges vs. builders)
+
+We do it differently:
+- **Fast**—upload anytime, get feedback in hours
+- **Specific**—four clear questions, clear gaps
+- **Supportive**—audience members decode, not judge
+
+---
+
+## Ready to Join?
+
+1. Import your project from Devpost
+2. Watch people try to describe what you built
+3. See where they got it wrong
+4. Create a revision and try again
+5. Get better at explaining what you made
+
+**It's free. It's exclusive to builders. It's where you stop leaving traction on the table.**
+
+---
+
+## Tech Stack
+
+- Node.js + Express
+- SQLite (better-sqlite3)
+- EJS templates
+- Bootstrap 5
+
+---
+
+## Quick Start
+
+```bash
+npm install
+npm start
+# Server runs on http://localhost:3000
+```
+
+---
+
+## License
+
+MIT License—because we believe in open source.
+
+---
+
+## Built by DAY50, Inc
+
+[day50.dev](https://day50.dev)
+
+---
+
+**Stop letting bad pitches kill good builds. Join PitchMasters Club.**
