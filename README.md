@@ -1,14 +1,10 @@
 # The PitchMasters Club
 
-## Where Brilliant Builders Finally Get Heard
+Your thing works, it solves real problems.
 
-**Free. Exclusive. Empowering.**
+You can't pitch it.
 
-You built something incredible at a hackathon. You coded through the night. You solved a real problem. You believed in it.
-
-Then you pitched it.
-
-And watched their eyes glaze over.
+People's eyes glaze over.
 
 Sound familiar? You're not alone. **Most builders suck at pitching.** And that's okay—because PitchMasters Club is where we fix that together.
 
