@@ -1,5 +1,9 @@
-// Get project ID from URL
-const projectId = window.location.pathname.split('/').pop();
+// Get project ID and optional revision number from URL
+const pathParts = window.location.pathname.split('/').filter(p => p);
+const projectId = pathParts.find(p => !isNaN(p));
+const urlParams = new URLSearchParams(window.location.search);
+const requestedRevisionNum = urlParams.get('rev');
+
 let project = null;
 let currentRevision = null;
 
@@ -34,7 +38,7 @@ async function loadProject() {
   
   // Update header
   document.getElementById('project-title').textContent = project.title;
-  document.getElementById('project-author').textContent = `by ${project.displayName || project.username}`;
+  document.getElementById('project-author').innerHTML = `by <a href="/profile/${project.userId}">${project.displayName || project.username}</a>`;
   if (project.provenanceUrl) {
     document.getElementById('project-provenance').textContent = `from ${project.provenanceUrl}`;
   }
@@ -42,9 +46,16 @@ async function loadProject() {
   // Show revision tabs
   renderRevisionTabs();
   
-  // Select latest revision
-  if (project.revisions.length > 0) {
-    selectRevision(project.revisions[0]);
+  // Select requested revision (from ?rev=N param) or default to latest
+  let revToSelect;
+  if (requestedRevisionNum) {
+    revToSelect = project.revisions.find(r => r.revisionNumber == requestedRevisionNum);
+  }
+  if (!revToSelect && project.revisions.length > 0) {
+    revToSelect = project.revisions[0];
+  }
+  if (revToSelect) {
+    selectRevision(revToSelect);
   }
   
   // Show responses for latest revision
@@ -60,22 +71,13 @@ function renderRevisionTabs() {
   }
   
   tabsContainer.innerHTML = project.revisions.map((rev, i) => `
-    <button class="revision-tab ${currentRevision && currentRevision.id === rev.id ? 'active' : ''}" 
-            data-revision-id="${rev.id}">
+    <a href="/project/${project.id}?rev=${rev.revisionNumber}" class="revision-tab ${currentRevision && currentRevision.id === rev.id ? 'active' : ''}">
       Revision ${rev.revisionNumber}
       <span class="response-count">${rev.responseCount || 0} responses</span>
-    </button>
+    </a>
   `).join('');
   
-  // Add click handlers
-  tabsContainer.querySelectorAll('.revision-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const revId = parseInt(tab.dataset.revisionId);
-      const rev = project.revisions.find(r => r.id === revId);
-      selectRevision(rev);
-      renderResponses();
-    });
-  });
+  // Revision tabs are now links - no click handlers needed
 }
 
 function selectRevision(revision) {
@@ -127,13 +129,15 @@ function selectRevision(revision) {
   }
   
   // Update description
-  document.getElementById('revision-description-text').innerHTML = escapeHtml(revision.description || '').replace(/\n/g, '<br>');
-  
+  const descriptionText = escapeHtml(revision.description || '');
+  document.getElementById('revision-description-text').innerHTML = descriptionText.replace(/\n\n/g, '</p><p class="mb-3">').replace(/\n/g, '<br>');
+
   // Update story
   const storySection = document.getElementById('revision-story-section');
   const storyText = document.getElementById('revision-story-text');
   if (revision.story) {
-    storyText.innerHTML = escapeHtml(revision.story).replace(/\n/g, '<br>');
+    const formattedStory = escapeHtml(revision.story).replace(/\n\n/g, '</p><p class="mb-3">').replace(/\n/g, '<br>');
+    storyText.innerHTML = `<p class="mb-3">${formattedStory}</p>`;
     storySection.classList.remove('hidden');
   } else {
     storySection.classList.add('hidden');

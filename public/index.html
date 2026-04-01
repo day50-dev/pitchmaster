@@ -4,21 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>pitchmasters.club</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
   <header>
-    <div class="header-content">
-      <h1>pitchmasters.club</h1>
-      <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
-      <div id="auth-section"></div>
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="brand-logo">Pitch///asters</a>
+        <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+        <div id="auth-section"></div>
+        <nav class="header-nav">
+          <a href="/profile">Profile</a>
+        </nav>
+      </div>
     </div>
   </header>
 
-  <main>
-    <section id="projects-section">
-      <div class="section-header">
-        <h2>Projects</h2>
+  <main class="container">
+    <section id="projects-section" class="mb-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Recent Hacks</h2>
         <div class="header-buttons">
           <button id="import-devpost-btn" class="btn btn-secondary">Import Project</button>
           <button id="import-profile-btn" class="btn btn-secondary">Import All (username)</button>
@@ -27,112 +37,189 @@
       </div>
       <div id="projects-list"></div>
     </section>
+
+    <section id="upcoming-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Upcoming Hackathons</h2>
+        <button id="add-hackathon-btn" class="btn btn-secondary">+ Add Hackathon</button>
+      </div>
+      <div id="hackathons-list" class="hackathons-grid"></div>
+    </section>
   </main>
 
-  <div id="project-modal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close-modal">&times;</span>
-      <h3>Add Project</h3>
-      <form id="project-form">
-        <div class="form-step active" data-step="1">
-          <div class="form-group">
-            <label for="title">What's your project called?</label>
-            <input type="text" id="title" name="title" required placeholder="e.g., Nomi - Find the right tools">
-          </div>
-          <button type="button" class="btn btn-primary next-step">Next</button>
+  <!-- Project Modal -->
+  <div id="project-modal" class="modal fade" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="projectModalLabel">Add Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="form-step" data-step="2">
-          <div class="form-group">
-            <label for="description">What's it about?</label>
-            <textarea id="description" name="description" rows="3" required placeholder="Describe what your project does..."></textarea>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn btn-secondary prev-step">Back</button>
-            <button type="button" class="btn btn-primary next-step">Next</button>
-          </div>
-        </div>
-        <div class="form-step" data-step="3">
-          <p class="step-hint">Add links (optional) - you can skip this</p>
-          <div class="form-group">
-            <label for="videoUrl">YouTube Video</label>
-            <input type="url" id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
-          </div>
-          <div class="form-group">
-            <label for="githubUrl">GitHub</label>
-            <input type="url" id="githubUrl" name="githubUrl" placeholder="https://github.com/...">
-          </div>
-          <div class="form-group">
-            <label for="websiteUrl">Website</label>
-            <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://...">
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn btn-secondary prev-step">Back</button>
-            <button type="submit" class="btn btn-primary">Create Project</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="import-modal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close-modal" id="close-import">&times;</span>
-      <h3>Import from Devpost</h3>
-      <form id="import-form">
-        <div class="form-step active" data-step="1">
-          <p class="step-hint">Paste a Devpost project URL</p>
-          <div class="form-group">
-            <input type="url" id="devpost-url" name="devpost-url" placeholder="https://devpost.com/software/your-project" required>
-          </div>
-          <button type="submit" class="btn btn-primary" id="import-btn">Import</button>
-        </div>
-      </form>
-      <div id="import-preview" class="import-preview hidden">
-        <div class="preview-card">
-          <div class="preview-field">
-            <strong id="preview-title"></strong>
-          </div>
-          <div class="preview-field">
-            <span id="preview-description"></span>
-          </div>
-          <div class="preview-links">
-            <span id="preview-github" class="preview-link"></span>
-            <span id="preview-video" class="preview-link"></span>
-            <span id="preview-website" class="preview-link"></span>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="edit-import-btn">Edit</button>
-          <button type="button" class="btn btn-primary" id="save-import-btn">Save</button>
+        <div class="modal-body">
+          <form id="project-form">
+            <div class="form-step active" data-step="1">
+              <div class="form-group">
+                <label for="title">What's your project called?</label>
+                <input type="text" id="title" name="title" required placeholder="e.g., Nomi - Find the right tools">
+              </div>
+              <button type="button" class="btn btn-primary next-step">Next</button>
+            </div>
+            <div class="form-step" data-step="2">
+              <div class="form-group">
+                <label for="description">What's it about?</label>
+                <textarea id="description" name="description" rows="3" required placeholder="Describe what your project does..."></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">Back</button>
+                <button type="button" class="btn btn-primary next-step">Next</button>
+              </div>
+            </div>
+            <div class="form-step" data-step="3">
+              <p class="step-hint">Add links (optional) - you can skip this</p>
+              <div class="form-group">
+                <label for="videoUrl">YouTube Video</label>
+                <input type="url" id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=...">
+              </div>
+              <div class="form-group">
+                <label for="githubUrl">GitHub</label>
+                <input type="url" id="githubUrl" name="githubUrl" placeholder="https://github.com/...">
+              </div>
+              <div class="form-group">
+                <label for="websiteUrl">Website</label>
+                <input type="url" id="websiteUrl" name="websiteUrl" placeholder="https://...">
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">Back</button>
+                <button type="submit" class="btn btn-primary">Create Project</button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="profile-import-modal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close-modal" id="close-profile-import">&times;</span>
-      <h3>Import All Projects</h3>
-      <form id="profile-import-form">
-        <div class="form-step active" data-step="1">
-          <p class="step-hint">Enter a Devpost username</p>
-          <div class="form-group">
-            <input type="text" id="devpost-username" name="devpost-username" placeholder="username" required>
-          </div>
-          <button type="submit" class="btn btn-primary" id="profile-import-btn">Find Projects</button>
+  <!-- Import Modal -->
+  <div id="import-modal" class="modal fade" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="importModalLabel">Import from Devpost</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-      </form>
-      <div id="profile-preview" class="profile-preview hidden">
-        <p class="preview-count"><span id="profile-count">0</span> projects found</p>
-        <div id="project-select-list" class="project-select-list"></div>
-        <div class="import-actions">
-          <button type="button" class="btn btn-secondary" id="select-all-btn">All</button>
-          <button type="button" class="btn btn-primary" id="import-selected-btn">Import</button>
+        <div class="modal-body">
+          <form id="import-form">
+            <div class="form-step active" data-step="1">
+              <p class="step-hint">Paste a Devpost project URL</p>
+              <div class="form-group">
+                <input type="url" id="devpost-url" name="devpost-url" placeholder="https://devpost.com/software/your-project" required>
+              </div>
+              <button type="submit" class="btn btn-primary" id="import-btn">Import</button>
+            </div>
+          </form>
+          <div id="import-preview" class="import-preview hidden">
+            <div class="preview-card">
+              <div class="preview-field">
+                <strong id="preview-title"></strong>
+              </div>
+              <div class="preview-field">
+                <span id="preview-description"></span>
+              </div>
+              <div class="preview-links">
+                <span id="preview-github" class="preview-link"></span>
+                <span id="preview-video" class="preview-link"></span>
+                <span id="preview-website" class="preview-link"></span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" id="edit-import-btn">Edit</button>
+              <button type="button" class="btn btn-primary" id="save-import-btn">Save</button>
+            </div>
+          </div>
         </div>
       </div>
-      <div id="import-progress" class="import-progress hidden">
-        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
-        <p id="import-status"></p>
+    </div>
+  </div>
+
+  <!-- Profile Import Modal -->
+  <div id="profile-import-modal" class="modal fade" tabindex="-1" aria-labelledby="profileImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="profileImportModalLabel">Import All Projects</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="profile-import-form">
+            <div class="form-step active" data-step="1">
+              <p class="step-hint">Enter a Devpost username</p>
+              <div class="form-group">
+                <input type="text" id="devpost-username" name="devpost-username" placeholder="username" required>
+              </div>
+              <button type="submit" class="btn btn-primary" id="profile-import-btn">Find Projects</button>
+            </div>
+          </form>
+          <div id="profile-preview" class="profile-preview hidden">
+            <p class="preview-count"><span id="profile-count">0</span> projects found</p>
+            <div id="project-select-list" class="project-select-list"></div>
+            <div class="import-actions">
+              <button type="button" class="btn btn-secondary" id="select-all-btn">All</button>
+              <button type="button" class="btn btn-primary" id="import-selected-btn">Import</button>
+            </div>
+          </div>
+          <div id="import-progress" class="import-progress hidden">
+            <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+            <p id="import-status"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hackathon Modal -->
+  <div id="hackathon-modal" class="modal fade" tabindex="-1" aria-labelledby="hackathonModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="hackathonModalLabel">Add Hackathon</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="hackathon-form">
+            <div class="form-group">
+              <label for="hackathon-url">Luma Event URL</label>
+              <input type="url" id="hackathon-url" name="hackathon-url" placeholder="https://lu.ma/..." required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Event</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meetup Modal -->
+  <div id="meetup-modal" class="modal fade" tabindex="-1" aria-labelledby="meetupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="meetupModalLabel">Add Meetup</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="step-hint">Where should pitchmasters meet up?</p>
+          <form id="meetup-form">
+            <div class="form-group">
+              <label for="meetup-location">Location (optional)</label>
+              <input type="text" id="meetup-location" name="meetup-location" placeholder="e.g., WeWork, specific coffee shop">
+            </div>
+            <div class="form-group">
+              <label for="meetup-comment">Comment (optional)</label>
+              <textarea id="meetup-comment" name="meetup-comment" rows="2" placeholder="Any details about the meetup..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Meetup</button>
+          </form>
+          <div id="meetups-list" class="meetups-list"></div>
+        </div>
       </div>
     </div>
   </div>

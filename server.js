@@ -6,6 +6,7 @@ const GitHubStrategy = require('passport-github2').Strategy;
 const Database = require('better-sqlite3');
 const https = require('https');
 const http = require('http');
+const cheerio = require('cheerio');
 
 const app = express();
 const db = new Database('pitchthehack.db');
@@ -37,6 +38,7 @@ db.exec(`
     revisionNumber INTEGER,
     description TEXT,
     story TEXT,
+    imageUrl TEXT,
     videoUrl TEXT,
     githubUrl TEXT,
     websiteUrl TEXT,
@@ -58,6 +60,38 @@ db.exec(`
     isCorrectHowToUse INTEGER DEFAULT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (revisionId) REFERENCES revisions(id),
+    FOREIGN KEY (userId) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS hackathons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT UNIQUE,
+    title TEXT,
+    description TEXT,
+    imageUrl TEXT,
+    startDate DATETIME,
+    endDate DATETIME,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS hackathon_attendees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hackathonId INTEGER,
+    userId INTEGER,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hackathonId) REFERENCES hackathons(id),
+    FOREIGN KEY (userId) REFERENCES users(id),
+    UNIQUE(hackathonId, userId)
+  );
+
+  CREATE TABLE IF NOT EXISTS hackathon_meetups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hackathonId INTEGER,
+    userId INTEGER,
+    location TEXT,
+    comment TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hackathonId) REFERENCES hackathons(id),
     FOREIGN KEY (userId) REFERENCES users(id)
   );
 `);
@@ -105,57 +139,123 @@ function fetchUrl(url, timeout = 10000) {
 
 // Parse Devpost page to extract project data
 function parseDevpost(html, url) {
-  const result = { 
-    title: '', 
+  const result = {
+    title: '',
     description: '',     // short description from p class="large"
     story: '',           // longer story from #app-details-left
-    githubUrl: '', 
-    websiteUrl: '', 
-    videoUrl: '' 
+    imageUrl: '',        // og:image for project card
+    githubUrl: '',
+    websiteUrl: '',
+    videoUrl: ''
   };
-  
-  // Title
-  const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || 
-                     html.match(/<title>([^<]+)<\/title>/i);
-  if (titleMatch) result.title = titleMatch[1].trim();
-  
+
+  const $ = cheerio.load(html);
+
+  // Title from og:title meta tag
+  result.title = $('meta[property="og:title"]').attr('content') || $('title').text() || '';
+
   // Short description from p class="large"
-  const shortDescMatch = html.match(/<p[^>]*class="[^"]*large[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
-  result.description = shortDescMatch ? shortDescMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-  
-  // Story from #app-details-left
-  const appDetailsMatch = html.match(/<article[^>]*id="app-details"[\s\S]*?<\/article>/i);
-  if (appDetailsMatch) {
-    const firstPMatch = appDetailsMatch[0].match(/<div>[\s\S]*?<p>([\s\S]*?)<\/p>/i);
-    if (firstPMatch) {
-      result.story = firstPMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const shortDesc = $('p.large').first().text().trim();
+  result.description = shortDesc;
+
+  // Story from #app-details-left - get the content div between gallery and built-with
+  const appDetailsLeft = $('#app-details-left');
+  if (appDetailsLeft.length > 0) {
+    // Get children and find the story div (the one after gallery, before built-with)
+    const children = appDetailsLeft.children();
+    let storyDiv = null;
+    
+    for (let i = 0; i < children.length; i++) {
+      const $child = $(children[i]);
+      // Skip gallery, find the div before built-with
+      if ($child.attr('id') === 'gallery') continue;
+      if ($child.attr('id') === 'built-with') break;
+      if ($child.is('div') && !$child.attr('id')) {
+        storyDiv = $child;
+        break;
+      }
+    }
+    
+    if (storyDiv && storyDiv.length > 0) {
+      const storyParts = [];
+      
+      // Check if there are h2 headings (structured content)
+      const headings = storyDiv.find('h2');
+      if (headings.length > 0) {
+        // Get all h2 headings and their following paragraphs
+        headings.each((_, el) => {
+          const $el = $(el);
+          const headingText = $el.text().trim();
+          if (headingText) storyParts.push(headingText);
+          
+          // Get paragraphs after this heading until next h2
+          let $next = $el.next();
+          while ($next.length > 0 && !$next.is('h2')) {
+            if ($next.is('p')) {
+              const text = $next.text().trim();
+              if (text && text.length > 10) {
+                storyParts.push(text);
+              }
+            }
+            $next = $next.next();
+          }
+        });
+      } else {
+        // No headings - just get all paragraphs
+        storyDiv.find('p').each((_, el) => {
+          const text = $(el).text().trim();
+          if (text && text.length > 10) {
+            storyParts.push(text);
+          }
+        });
+      }
+      
+      if (storyParts.length > 0) {
+        result.story = storyParts.join('\n\n');
+      }
     }
   }
-  
-  // Extract YouTube video from embed tag (iframe) - this is the embedded player
-  const youtubeEmbedMatch = html.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/i);
-  if (youtubeEmbedMatch) {
-    result.videoUrl = `https://youtube.com/watch?v=${youtubeEmbedMatch[1]}`;
+
+  // Extract YouTube video URL from iframe embed
+  const videoEmbed = appDetailsLeft.find('iframe.video-embed, iframe[src*="youtube.com/embed"]').first();
+  if (videoEmbed.length > 0) {
+    const src = videoEmbed.attr('src') || '';
+    const videoIdMatch = src.match(/embed\/([a-zA-Z0-9_-]+)/);
+    if (videoIdMatch) {
+      result.videoUrl = `https://youtube.com/watch?v=${videoIdMatch[1]}`;
+    }
   }
-  
-  // Extract GitHub URL - look in the "Try it out" section
-  const tryItOutSection = html.match(/<h2[^>]*>\s*Try it out[\s\S]*?<\/h2>([\s\S]*?)<\/nav>/i);
-  if (tryItOutSection) {
-    const githubMatch = tryItOutSection[1].match(/href="(https?:\/\/github\.com\/[^"]+)"/i);
-    if (githubMatch) result.githubUrl = githubMatch[1];
+
+  // Extract GitHub URL from "Try it out" section
+  const tryItOutSection = $('h2').filter((_, el) => $(el).text().trim().toLowerCase() === 'try it out').parent();
+  if (tryItOutSection.length > 0) {
+    const githubLink = tryItOutSection.find('a[href*="github.com"]').first();
+    if (githubLink.length > 0) {
+      result.githubUrl = githubLink.attr('href') || '';
+    }
   }
   // Fallback: any github.com link in the page
   if (!result.githubUrl) {
-    const githubMatch = html.match(/href="(https?:\/\/github\.com\/[^"]+)"/i);
-    if (githubMatch) result.githubUrl = githubMatch[1];
+    const githubLink = $('a[href*="github.com"]').first();
+    if (githubLink.length > 0) {
+      result.githubUrl = githubLink.attr('href') || '';
+    }
   }
-  
+
   // Extract website URL from "Try it out" section (not devpost itself)
-  if (tryItOutSection) {
-    const websiteMatch = tryItOutSection[1].match(/href="(https?:\/\/(?!devpost\.com)[^"]+)"/i);
-    if (websiteMatch) result.websiteUrl = websiteMatch[1];
+  if (tryItOutSection.length > 0) {
+    const websiteLink = tryItOutSection.find('a[href]').filter((_, el) => {
+      const href = $(el).attr('href') || '';
+      return !href.includes('devpost.com');
+    }).first();
+    if (websiteLink.length > 0) {
+      result.websiteUrl = websiteLink.attr('href') || '';
+    }
   }
-  
+
+  // Extract og:image for project card
+  result.imageUrl = $('meta[property="og:image"]').attr('content') || '';
+
   return result;
 }
 
@@ -176,6 +276,41 @@ app.post('/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// Get a user by ID
+app.get('/api/users/:id', (req, res) => {
+  const userId = req.params.id;
+  const user = db.prepare('SELECT id, username, displayName, avatarUrl FROM users WHERE id = ?').get(userId);
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  res.json(user);
+});
+
+// Get all projects for a user (public profile)
+app.get('/api/users/:id/projects', (req, res) => {
+  const userId = req.params.id;
+  const projects = db.prepare(`
+    SELECT p.*, 
+           r.description as latestDescription,
+           r.story as latestStory,
+           r.imageUrl as latestImageUrl,
+           r.videoUrl as latestVideoUrl,
+           r.githubUrl as latestGithubUrl,
+           r.websiteUrl as latestWebsiteUrl,
+           r.revisionNumber,
+           (SELECT COUNT(*) FROM responses WHERE revisionId = r.id) as responseCount
+    FROM projects p
+    LEFT JOIN revisions r ON r.id = (
+      SELECT id FROM revisions WHERE projectId = p.id ORDER BY revisionNumber DESC LIMIT 1
+    )
+    WHERE p.userId = ?
+    ORDER BY p.createdAt DESC
+  `).all(userId);
+  res.json(projects);
+});
+
 // Get all projects for user (with latest revision info)
 app.get('/api/projects', (req, res) => {
   const userId = 1; // Demo user
@@ -183,6 +318,7 @@ app.get('/api/projects', (req, res) => {
     SELECT p.*, 
            r.description as latestDescription,
            r.story as latestStory,
+           r.imageUrl as latestImageUrl,
            r.videoUrl as latestVideoUrl,
            r.githubUrl as latestGithubUrl,
            r.websiteUrl as latestWebsiteUrl,
@@ -240,9 +376,9 @@ app.get('/api/projects/:id', (req, res) => {
 });
 
 // Create new project (or find existing by provenance) with first revision
-app.post('/api/projects', (req, res) => {
+app.post('/api/projects', async (req, res) => {
   const userId = 1; // Demo user
-  const { title, description, story, videoUrl, githubUrl, websiteUrl, provenanceUrl, ...pitchAnswers } = req.body;
+  const { title, description, story, imageUrl, videoUrl, githubUrl, websiteUrl, provenanceUrl, ...pitchAnswers } = req.body;
   
   if (!title || title.length > 200) {
     return res.status(400).json({ error: 'Title is required (max 200 chars)' });
@@ -291,11 +427,21 @@ app.post('/api/projects', (req, res) => {
   
   projectId = result.lastInsertRowid;
   
+  // Get og:image from Devpost if we have a provenance URL, or use provided imageUrl
+  let finalImageUrl = imageUrl || '';
+  if (!finalImageUrl && provenanceUrl) {
+    try {
+      const html = await fetchUrl(provenanceUrl);
+      const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+      if (imgMatch) finalImageUrl = imgMatch[1];
+    } catch (e) { /* ignore fetch errors */ }
+  }
+  
   // Create first revision
   const revResult = db.prepare(`
-    INSERT INTO revisions (projectId, revisionNumber, description, story, videoUrl, githubUrl, websiteUrl)
-    VALUES (?, 1, ?, ?, ?, ?, ?)
-  `).run(projectId, description, story || '', videoUrl || '', githubUrl || '', websiteUrl || '');
+    INSERT INTO revisions (projectId, revisionNumber, description, story, imageUrl, videoUrl, githubUrl, websiteUrl)
+    VALUES (?, 1, ?, ?, ?, ?, ?, ?)
+  `).run(projectId, description, story || '', finalImageUrl, videoUrl || '', githubUrl || '', websiteUrl || '');
   
   // If pitch creator answered the 4 questions, create a self-response
   if (pitchAnswers.whatDoesItDo || pitchAnswers.problemItSolves || pitchAnswers.whoIsItFor || pitchAnswers.howToUse) {
@@ -411,30 +557,30 @@ app.post('/api/import/devpost', async (req, res) => {
 // Parse Devpost user profile to extract all project URLs
 function parseDevpostProfile(html, username) {
   const projects = [];
-  
-  const gallerySectionMatch = html.match(/<div id="software-entries"[^>]*>([\s\S]*?)<div class="pagination-centered"/i);
-  const galleryHtml = gallerySectionMatch ? gallerySectionMatch[1] : '';
-  
-  const galleryItemRegex = /<div class="(?:large-\d+\s+)?small-12\s+columns\s+gallery-item"[^>]*>[\s\S]*?href="(https?:\/\/[^/]*devpost\.com\/software\/([^"]+))">[\s\S]*?<h5>\s*([^<]+)\s*<\/h5>/gi;
-  let match;
-  const seenUrls = new Set();
-  
-  while ((match = galleryItemRegex.exec(galleryHtml)) !== null) {
-    const url = match[1];
-    if (!seenUrls.has(url)) {
-      seenUrls.add(url);
-      projects.push({ 
-        url: url,
-        title: match[3].trim()
-      });
+  const $ = cheerio.load(html);
+
+  // Get display name
+  const displayName = $('#portfolio-user-name').first().text().trim() || username;
+
+  // Get all project cards from the gallery
+  $('#software-entries .gallery-item').each((_, el) => {
+    const $el = $(el);
+    const $link = $el.find('a[href*="/software/"]').first();
+    const $title = $el.find('h5').first();
+    
+    if ($link.length > 0) {
+      const url = $link.attr('href');
+      const title = $title.text().trim() || url;
+      
+      if (url && !projects.some(p => p.url === url)) {
+        projects.push({ url, title });
+      }
     }
-  }
-  
-  const displayNameMatch = html.match(/id="portfolio-user-name"[^>]*>([^<]+)/i);
-  
+  });
+
   return {
     username: username,
-    displayName: displayNameMatch ? displayNameMatch[1].trim() : username,
+    displayName: displayName,
     projects: projects
   };
 }
@@ -452,6 +598,146 @@ app.post('/api/import/devpost/profile', async (req, res) => {
   res.json(profileData);
 });
 
+// Parse Luma event page to extract OpenGraph data
+function parseLumaEvent(html, url) {
+  const result = {
+    title: '',
+    description: '',
+    imageUrl: '',
+    startDate: null,
+    endDate: null
+  };
+
+  const $ = cheerio.load(html);
+
+  // Title from og:title or <title>
+  result.title = ($('meta[property="og:title"]').attr('content') || $('title').text() || '').replace(/\s*·\s*Luma$/i, '').trim();
+
+  // Description from og:description
+  result.description = $('meta[property="og:description"]').attr('content') || '';
+
+  // Image from og:image
+  result.imageUrl = $('meta[property="og:image"]').attr('content') || $('meta[name="image"]').attr('content') || '';
+
+  // Dates from JSON-LD schema
+  const startDateMatch = html.match(/"startDate":"([^"]+)"/i);
+  const endDateMatch = html.match(/"endDate":"([^"]+)"/i);
+  if (startDateMatch) result.startDate = startDateMatch[1];
+  if (endDateMatch) result.endDate = endDateMatch[1];
+
+  return result;
+}
+
+// Add a Luma hackathon event
+app.post('/api/hackathons', async (req, res) => {
+  const { url } = req.body;
+  if (!url || !url.match(/^https?:\/\/[^/]*luma\.com\//i)) {
+    return res.status(400).json({ error: 'Please provide a valid Luma event URL' });
+  }
+  
+  // Check if already exists
+  const existing = db.prepare('SELECT * FROM hackathons WHERE url = ?').get(url);
+  if (existing) {
+    return res.json(existing);
+  }
+  
+  // Fetch and parse the Luma page
+  const html = await fetchUrl(url);
+  const eventData = parseLumaEvent(html, url);
+  
+  const result = db.prepare(`
+    INSERT INTO hackathons (url, title, description, imageUrl, startDate, endDate)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(url, eventData.title, eventData.description, eventData.imageUrl, eventData.startDate, eventData.endDate);
+  
+  const hackathon = db.prepare('SELECT * FROM hackathons WHERE id = ?').get(result.lastInsertRowid);
+  res.json(hackathon);
+});
+
+// Get all upcoming hackathons (future start dates)
+app.get('/api/hackathons/upcoming', (req, res) => {
+  const hackathons = db.prepare(`
+    SELECT h.*, 
+           (SELECT COUNT(*) FROM hackathon_attendees WHERE hackathonId = h.id) as attendeeCount
+    FROM hackathons h
+    WHERE h.startDate IS NOT NULL AND h.startDate > datetime('now')
+    ORDER BY h.startDate ASC
+  `).all();
+  res.json(hackathons);
+});
+
+// Get all hackathons
+app.get('/api/hackathons', (req, res) => {
+  const hackathons = db.prepare(`
+    SELECT h.*, 
+           (SELECT COUNT(*) FROM hackathon_attendees WHERE hackathonId = h.id) as attendeeCount
+    FROM hackathons h
+    ORDER BY COALESCE(h.startDate, '9999-12-31') ASC
+  `).all();
+  res.json(hackathons);
+});
+
+// Mark attendance for a hackathon
+app.post('/api/hackathons/:id/attend', (req, res) => {
+  const hackathonId = req.params.id;
+  const userId = 1; // Demo user
+  
+  const hackathon = db.prepare('SELECT id FROM hackathons WHERE id = ?').get(hackathonId);
+  if (!hackathon) {
+    return res.status(404).json({ error: 'Hackathon not found' });
+  }
+  
+  db.prepare(`
+    INSERT OR IGNORE INTO hackathon_attendees (hackathonId, userId)
+    VALUES (?, ?)
+  `).run(hackathonId, userId);
+  
+  res.json({ ok: true });
+});
+
+// Remove attendance
+app.delete('/api/hackathons/:id/attend', (req, res) => {
+  const hackathonId = req.params.id;
+  const userId = 1; // Demo user
+  
+  db.prepare('DELETE FROM hackathon_attendees WHERE hackathonId = ? AND userId = ?').run(hackathonId, userId);
+  res.json({ ok: true });
+});
+
+// Add a meetup (comment/location for attendees)
+app.post('/api/hackathons/:id/meetups', (req, res) => {
+  const hackathonId = req.params.id;
+  const userId = 1; // Demo user
+  const { location, comment } = req.body;
+  
+  const result = db.prepare(`
+    INSERT INTO hackathon_meetups (hackathonId, userId, location, comment)
+    VALUES (?, ?, ?, ?)
+  `).run(hackathonId, userId, location || '', comment || '');
+  
+  const meetup = db.prepare(`
+    SELECT m.*, u.username, u.displayName, u.avatarUrl
+    FROM hackathon_meetups m
+    JOIN users u ON m.userId = u.id
+    WHERE m.id = ?
+  `).get(result.lastInsertRowid);
+  
+  res.json(meetup);
+});
+
+// Get meetups for a hackathon
+app.get('/api/hackathons/:id/meetups', (req, res) => {
+  const hackathonId = req.params.id;
+  const meetups = db.prepare(`
+    SELECT m.*, u.username, u.displayName, u.avatarUrl
+    FROM hackathon_meetups m
+    JOIN users u ON m.userId = u.id
+    WHERE m.hackathonId = ?
+    ORDER BY m.createdAt DESC
+  `).all(hackathonId);
+  res.json(meetups);
+});
+
 // Serve project.html for /project/:id routes
 app.get('/project/:id', (req, res) => {
   res.sendFile(__dirname + '/public/project.html');
@@ -465,6 +751,25 @@ app.get('/edit', (req, res) => {
 // Serve import.html for /import route
 app.get('/import', (req, res) => {
   res.sendFile(__dirname + '/public/import.html');
+});
+
+// Serve profile.html for /profile route (own profile)
+app.get('/profile', (req, res) => {
+  res.sendFile(__dirname + '/public/profile.html');
+});
+
+// Serve profile.html for /profile/:id route (other user's profile)
+app.get('/profile/:id', (req, res) => {
+  res.sendFile(__dirname + '/public/profile.html');
+});
+
+// Serve project page for /project/:id routes (including revision links like /project/1/revision/3)
+app.get('/project/:id/revision/:rev', (req, res) => {
+  res.sendFile(__dirname + '/public/project.html');
+});
+
+app.get('/project/:id', (req, res) => {
+  res.sendFile(__dirname + '/public/project.html');
 });
 
 const PORT = process.env.PORT || 3000;

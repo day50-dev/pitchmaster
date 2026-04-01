@@ -4,6 +4,13 @@ const addProjectBtn = document.getElementById('add-project-btn');
 const importDevpostBtn = document.getElementById('import-devpost-btn');
 const projectModal = document.getElementById('project-modal');
 const importModal = document.getElementById('import-modal');
+
+// Hackathon elements
+const addHackathonBtn = document.getElementById('add-hackathon-btn');
+const hackathonsList = document.getElementById('hackathons-list');
+const hackathonModal = document.getElementById('hackathon-modal');
+const closeHackathon = document.getElementById('close-hackathon');
+const hackathonForm = document.getElementById('hackathon-form');
 const projectForm = document.getElementById('project-form');
 const importForm = document.getElementById('import-form');
 const closeModal = document.querySelector('.close-modal');
@@ -29,6 +36,7 @@ async function checkAuth() {
   currentUser = await res.json();
   renderAuth();
   loadProjects();
+  loadHackathons();
 }
 
 function renderAuth() {
@@ -67,38 +75,47 @@ async function loadProjects() {
 function renderProjects(projects) {
   if (projects.length === 0) {
     projectsList.innerHTML = `
-      <div class="empty-state">
-        <p>No projects yet. ${currentUser ? 'Be the first to add one!' : 'Sign in to add a project.'}</p>
+      <div class="text-center py-5">
+        <p class="text-muted mb-3">No projects yet. ${currentUser ? 'Be the first to add one!' : 'Sign in to add a project.'}</p>
         ${currentUser ? '<button class="btn btn-primary" id="empty-add-btn">Add Project</button>' : ''}
       </div>
     `;
     if (currentUser) {
-      document.getElementById('empty-add-btn')?.addEventListener('click', () => projectModal.classList.remove('hidden'));
+      document.getElementById('empty-add-btn')?.addEventListener('click', () => new bootstrap.Modal(projectModal).show());
     }
     return;
   }
 
-  projectsList.innerHTML = projects.map(p => `
-    <a href="/project/${p.id}" class="project-card">
-      <div class="project-header">
-        <h3 class="project-title">${escapeHtml(p.title)}</h3>
-        <div class="project-author">
-          <img src="${p.avatarUrl || 'https://github.com/ghost.png'}" alt="${p.displayName}">
-          <span>${p.displayName || p.username}</span>
-        </div>
+  // Use Bootstrap grid with wider columns for larger cards
+  projectsList.innerHTML = '<div class="row g-4">' + projects.map(p => {
+    const imageUrl = p.latestImageUrl || 'https://placehold.co/600x400?text=No+Image';
+    return `
+      <div class="col-12 col-md-6 col-lg-6 col-xl-4">
+        <a href="/project/${p.id}" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 overflow-hidden card-hover">
+            <img src="${escapeHtml(imageUrl)}" class="card-img-top" alt="${escapeHtml(p.title)}" style="height: 180px; object-fit: cover;">
+            <div class="card-body">
+              <h5 class="card-title mb-2">${escapeHtml(p.title)}</h5>
+              <p class="card-text text-muted small mb-3">${escapeHtml(p.latestDescription || '').substring(0, 100)}${(p.latestDescription || '').length > 100 ? '...' : ''}</p>
+              <div class="d-flex align-items-center">
+                <img src="${p.avatarUrl || 'https://github.com/ghost.png'}" class="rounded-circle me-2" alt="${p.displayName}" width="24" height="24">
+                <span class="small text-muted">${p.displayName || p.username}</span>
+                <span class="ms-auto badge bg-secondary">Rev ${p.revisionNumber || 1}</span>
+              </div>
+            </div>
+            <div class="card-footer bg-transparent border-top-0">
+              <div class="d-flex gap-2">
+                ${p.latestVideoUrl ? '<span class="badge bg-danger">🎬 Video</span>' : ''}
+                ${p.latestGithubUrl ? '<span class="badge bg-dark">💻 Code</span>' : ''}
+                ${p.latestWebsiteUrl ? '<span class="badge bg-primary">🌐 Site</span>' : ''}
+                <span class="badge bg-light text-dark ms-auto">${p.responseCount || 0} responses</span>
+              </div>
+            </div>
+          </div>
+        </a>
       </div>
-      <p class="project-description">${escapeHtml(p.latestDescription || '')}</p>
-      <div class="project-meta-row">
-        <span class="revision-badge">Rev ${p.revisionNumber || 1}</span>
-        <span class="response-badge">${p.responseCount || 0} responses</span>
-      </div>
-      <div class="project-links">
-        ${p.latestVideoUrl ? `<span class="project-link youtube">Watch</span>` : ''}
-        ${p.latestGithubUrl ? `<span class="project-link github">Code</span>` : ''}
-        ${p.latestWebsiteUrl ? `<span class="project-link website">Visit</span>` : ''}
-      </div>
-    </a>
-  `).join('');
+    `;
+  }).join('') + '</div>';
 }
 
 function escapeHtml(str) {
@@ -106,11 +123,13 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Project modal handlers
-addProjectBtn.addEventListener('click', () => projectModal.classList.remove('hidden'));
-closeModal.addEventListener('click', () => projectModal.classList.add('hidden'));
-projectModal.addEventListener('click', (e) => {
-  if (e.target === projectModal) projectModal.classList.add('hidden');
+// Project modal handlers - use Bootstrap Modal API
+addProjectBtn.addEventListener('click', () => new bootstrap.Modal(projectModal).show());
+projectModal.addEventListener('hidden.bs.modal', () => {
+  // Reset form steps when modal closes
+  projectForm.querySelectorAll('.form-step').forEach((step, i) => {
+    step.classList.toggle('active', i === 0);
+  });
 });
 
 // Form step navigation for progressive disclosure
@@ -191,18 +210,9 @@ projectForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Import modal handlers
-importDevpostBtn.addEventListener('click', () => importModal.classList.remove('hidden'));
-closeImport.addEventListener('click', () => {
-  importModal.classList.add('hidden');
-  resetImportForm();
-});
-importModal.addEventListener('click', (e) => {
-  if (e.target === importModal) {
-    importModal.classList.add('hidden');
-    resetImportForm();
-  }
-});
+// Import modal handlers - use Bootstrap Modal API
+importDevpostBtn.addEventListener('click', () => new bootstrap.Modal(importModal).show());
+importModal.addEventListener('hidden.bs.modal', () => resetImportForm());
 
 importForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -275,13 +285,15 @@ document.getElementById('edit-import-btn')?.addEventListener('click', () => {
 // Save import button handler is now inline in HTML click handler
 document.getElementById('save-import-btn').addEventListener('click', async () => {
   if (!importedData) return;
-  
+
   const res = await fetch('/api/projects', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       title: importedData.title,
       description: importedData.description,
+      story: importedData.story,
+      imageUrl: importedData.imageUrl,
       videoUrl: importedData.videoUrl,
       githubUrl: importedData.githubUrl,
       websiteUrl: importedData.websiteUrl,
@@ -302,18 +314,9 @@ document.getElementById('save-import-btn').addEventListener('click', async () =>
   }
 });
 
-// Profile import handlers
-profileImportBtn.addEventListener('click', () => profileImportModal.classList.remove('hidden'));
-closeProfileImport.addEventListener('click', () => {
-  profileImportModal.classList.add('hidden');
-  resetProfileForm();
-});
-profileImportModal.addEventListener('click', (e) => {
-  if (e.target === profileImportModal) {
-    profileImportModal.classList.add('hidden');
-    resetProfileForm();
-  }
-});
+// Profile import handlers - use Bootstrap Modal API
+profileImportBtn.addEventListener('click', () => new bootstrap.Modal(profileImportModal).show());
+profileImportModal.addEventListener('hidden.bs.modal', () => resetProfileForm());
 
 profileImportForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -421,6 +424,8 @@ importSelectedBtn.addEventListener('click', async () => {
         body: JSON.stringify({
           title: data.title,
           description: data.description,
+          story: data.story,
+          imageUrl: data.imageUrl,
           videoUrl: data.videoUrl,
           githubUrl: data.githubUrl,
           websiteUrl: data.websiteUrl,
@@ -449,6 +454,134 @@ importSelectedBtn.addEventListener('click', async () => {
     resetProfileForm();
     loadProjects();
   }, 1500);
+});
+
+// Hackathon functions
+async function loadHackathons() {
+  const res = await fetch('/api/hackathons/upcoming');
+  const hackathons = await res.json();
+  renderHackathons(hackathons);
+}
+
+function renderHackathons(hackathons) {
+  if (hackathons.length === 0) {
+    hackathonsList.innerHTML = '<p class="empty-state">No upcoming hackathons. Add one from Luma!</p>';
+    return;
+  }
+  
+  hackathonsList.innerHTML = hackathons.map(h => {
+    const startDate = h.startDate ? new Date(h.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBD';
+    return `
+      <div class="hackathon-card">
+        ${h.imageUrl ? `<div class="hackathon-image" style="background-image: url('${escapeHtml(h.imageUrl)}')"></div>` : ''}
+        <div class="hackathon-info">
+          <h3 class="hackathon-title">${escapeHtml(h.title || 'Hackathon')}</h3>
+          <p class="hackathon-date">${startDate}</p>
+          <p class="hackathon-description">${escapeHtml(h.description || '').substring(0, 100)}${(h.description || '').length > 100 ? '...' : ''}</p>
+          <div class="hackathon-actions">
+            <span class="attendee-count">${h.attendeeCount || 0} attending</span>
+            <button class="btn btn-small btn-attend" data-id="${h.id}">I'm going</button>
+            <button class="btn btn-small btn-meetup" data-id="${h.id}">Add meetup</button>
+            <a href="${escapeHtml(h.url)}" target="_blank" class="btn btn-small">View</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Add attend button handlers
+  hackathonsList.querySelectorAll('.btn-attend').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      await fetch(`/api/hackathons/${id}/attend`, { method: 'POST' });
+      loadHackathons();
+    });
+  });
+}
+
+// Hackathon modal handlers - use Bootstrap Modal API
+addHackathonBtn?.addEventListener('click', () => new bootstrap.Modal(hackathonModal).show());
+hackathonModal.addEventListener('hidden.bs.modal', () => hackathonForm.reset());
+
+hackathonForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const url = document.getElementById('hackathon-url').value;
+  
+  try {
+    const res = await fetch('/api/hackathons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    
+    if (res.ok) {
+      hackathonForm.reset();
+      hackathonModal.classList.add('hidden');
+      loadHackathons();
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Failed to add hackathon');
+    }
+  } catch (err) {
+    alert('Failed to add hackathon');
+  }
+});
+
+// Meetup modal
+let currentHackathonId = null;
+const meetupModal = document.getElementById('meetup-modal');
+const closeMeetup = document.getElementById('close-meetup');
+const meetupForm = document.getElementById('meetup-form');
+const meetupsList = document.getElementById('meetups-list');
+
+hackathonsList.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('btn-meetup')) {
+    currentHackathonId = e.target.dataset.id;
+    new bootstrap.Modal(meetupModal).show();
+    loadMeetups(currentHackathonId);
+  }
+});
+
+meetupModal.addEventListener('hidden.bs.modal', () => meetupForm.reset());
+
+async function loadMeetups(hackathonId) {
+  const res = await fetch(`/api/hackathons/${hackathonId}/meetups`);
+  const meetups = await res.json();
+  renderMeetups(meetups);
+}
+
+function renderMeetups(meetups) {
+  if (meetups.length === 0) {
+    meetupsList.innerHTML = '<p class="empty-state">No meetups yet. Add one!</p>';
+    return;
+  }
+  
+  meetupsList.innerHTML = meetups.map(m => `
+    <div class="meetup-item">
+      <div class="meetup-header">
+        <strong>${escapeHtml(m.displayName || m.username)}</strong>
+        ${m.location ? `<span class="meetup-location">📍 ${escapeHtml(m.location)}</span>` : ''}
+      </div>
+      ${m.comment ? `<p class="meetup-comment">${escapeHtml(m.comment)}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+meetupForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const location = document.getElementById('meetup-location').value;
+  const comment = document.getElementById('meetup-comment').value;
+  
+  const res = await fetch(`/api/hackathons/${currentHackathonId}/meetups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ location, comment })
+  });
+  
+  if (res.ok) {
+    meetupForm.reset();
+    loadMeetups(currentHackathonId);
+  }
 });
 
 checkAuth();

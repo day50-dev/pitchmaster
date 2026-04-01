@@ -4,20 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project - pitchmasters.club</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
   <header>
-    <div class="header-content">
-      <h1><a href="/">pitchmasters.club</a></h1>
-      <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
-      <div id="auth-section"></div>
+    <div class="container">
+      <div class="header-content">
+        <a href="/" class="brand-logo">Pitch///asters</a>
+        <p class="tagline">Re-pitch your hackathon projects. Get real feedback.</p>
+        <div id="auth-section"></div>
+        <nav class="header-nav">
+          <a href="/profile">Profile</a>
+        </nav>
+      </div>
     </div>
   </header>
 
   <main id="project-main">
-    <a href="/" class="back-link">« Back to Projects</a>
-    
+    <a href="/" class="back-link">← Back to Projects</a>
+
     <section id="project-header">
       <h2 id="project-title">Loading...</h2>
       <div class="project-meta">
@@ -44,7 +54,7 @@
             </div>
             <button type="button" class="btn btn-primary next-step">Next</button>
           </div>
-          
+
           <div class="form-step" data-step="2">
             <p class="step-hint">Add links (optional)</p>
             <div class="form-group">
@@ -76,14 +86,14 @@
           <a id="revision-github" href="" target="_blank" class="project-link github">View Code</a>
           <a id="revision-website" href="" target="_blank" class="project-link website">Visit Site</a>
         </div>
-        
+
         <div class="revision-description">
-          <h3>Description</h3>
+          <h3>About</h3>
           <div id="revision-description-text"></div>
         </div>
-        
+
         <div class="revision-story hidden" id="revision-story-section">
-          <h3>Story</h3>
+          <h3>Details</h3>
           <div id="revision-story-text"></div>
         </div>
       </div>
@@ -95,7 +105,7 @@
         </div>
         <div class="audience-content">
           <p class="audience-pitch">After viewing the pitch, describe what this project does. Practice communicating clearly!</p>
-          
+
           <form id="response-form">
             <div class="form-group">
               <label for="whatDoesItDo">What does this do?</label>
@@ -123,14 +133,14 @@
       <h3>Attempted Descriptions (<span id="response-count">0</span>)</h3>
       <div id="responses-list"></div>
     </section>
-
-    <script>
-      function toggleSection(id) {
-        const section = document.getElementById(id);
-        section.classList.toggle('collapsed');
-      }
-    </script>
   </main>
+
+  <script>
+    function toggleSection(id) {
+      const section = document.getElementById(id);
+      section.classList.toggle('collapsed');
+    }
+  </script>
 
   <script src="/project.js"></script>
 </body>
