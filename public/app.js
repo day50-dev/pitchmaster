@@ -570,17 +570,31 @@ importSelectedBtn.addEventListener('click', async () => {
 async function loadHackathons() {
   const res = await fetch('/api/hackathons/upcoming');
   const hackathons = await res.json();
-  renderHackathons(hackathons);
+  await renderHackathons(hackathons);
 }
 
-function renderHackathons(hackathons) {
+async function renderHackathons(hackathons) {
   if (hackathons.length === 0) {
     hackathonsList.innerHTML = '<p class="empty-state">No upcoming hackathons. Add one from Luma!</p>';
     return;
   }
 
-  hackathonsList.innerHTML = hackathons.map(h => {
+  // Check attendance for all hackathons
+  const attendancePromises = hackathons.map(async h => {
+    try {
+      const res = await fetch(`/api/hackathons/${h.id}/attendees`);
+      const attendees = await res.json();
+      return attendees.some(a => a.id === 1); // Demo user ID
+    } catch {
+      return false;
+    }
+  });
+
+  const attendanceStatus = await Promise.all(attendancePromises);
+
+  hackathonsList.innerHTML = hackathons.map((h, i) => {
     const startDate = h.startDate ? new Date(h.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBD';
+    const isAttending = attendanceStatus[i];
     return `
       <div class="hackathon-card">
         ${h.imageUrl ? `<a href="/events/${h.id}" class="hackathon-image-link"><div class="hackathon-image" style="background-image: url('${escapeHtml(h.imageUrl)}')"></div></a>` : ''}
@@ -592,7 +606,7 @@ function renderHackathons(hackathons) {
           <p class="hackathon-description">${escapeHtml(h.description || '').substring(0, 100)}${(h.description || '').length > 100 ? '...' : ''}</p>
           <div class="hackathon-actions">
             <a href="/events/${h.id}" class="attendee-count">${h.attendeeCount || 0} attending</a>
-            <button class="btn btn-small btn-attend" data-id="${h.id}">I'm going</button>
+            <button class="btn btn-small btn-attend ${isAttending ? 'btn-outline-danger' : 'btn-secondary'}" data-id="${h.id}">${isAttending ? 'Cancel' : "I'm going"}</button>
             <button class="btn btn-small btn-meetup" data-id="${h.id}">Add meetup</button>
           </div>
         </div>
@@ -605,7 +619,13 @@ function renderHackathons(hackathons) {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = btn.dataset.id;
-      await fetch(`/api/hackathons/${id}/attend`, { method: 'POST' });
+      const isCurrentlyAttending = btn.classList.contains('btn-outline-danger');
+
+      if (isCurrentlyAttending) {
+        await fetch(`/api/hackathons/${id}/attend`, { method: 'DELETE' });
+      } else {
+        await fetch(`/api/hackathons/${id}/attend`, { method: 'POST' });
+      }
       loadHackathons();
     });
   });
